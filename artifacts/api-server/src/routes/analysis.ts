@@ -3,30 +3,46 @@ import type { SteeringReport } from "../analysis/engine.js";
 
 const router = Router();
 
+type RunStatus = "idle" | "running" | "complete" | "error";
+
 let cachedReport: SteeringReport | null = null;
-let isRunning = false;
+let runStatus: RunStatus = "idle";
+let lastError: string | null = null;
 
-router.post("/analysis/run", async (_req, res) => {
-  if (isRunning) {
-    return res.status(409).json({ error: "Analysis already in progress" });
-  }
-
+async function startAnalysis() {
+  if (runStatus === "running") return;
+  runStatus = "running";
+  lastError = null;
   try {
-    isRunning = true;
     const { runFullAnalysis } = await import("../analysis/engine.js");
     const report = await runFullAnalysis();
     cachedReport = report;
-    res.json(report);
-  } catch (err) {
+    runStatus = "complete";
+    console.log("Analysis complete. Report cached.");
+  } catch (err: any) {
     console.error("Analysis error:", err);
-    res.status(500).json({ error: "Analysis failed. Check server logs." });
-  } finally {
-    isRunning = false;
+    lastError = err?.message ?? "Unknown error";
+    runStatus = "error";
   }
+}
+
+// Fire-and-forget: returns 202 immediately, analysis runs in background
+router.post("/analysis/run", (_req, res) => {
+  if (runStatus === "running") {
+    return res.status(202).json({ status: "running", message: "Analysis already in progress" });
+  }
+  // Intentionally not awaited — runs in background
+  startAnalysis();
+  res.status(202).json({ status: "started" });
 });
 
 router.get("/analysis/cached", (_req, res) => {
-  res.json({ hasCache: cachedReport !== null, report: cachedReport });
+  res.json({
+    hasCache: cachedReport !== null,
+    status: runStatus,
+    error: lastError,
+    report: cachedReport,
+  });
 });
 
 export default router;

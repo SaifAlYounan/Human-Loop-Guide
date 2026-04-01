@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRunAnalysis, useGetCachedReport } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Brain, Play, CheckCircle, Clock, AlertTriangle, Loader2, ChevronRight } from "lucide-react";
@@ -44,54 +44,83 @@ const ANALYST_PROFILES = [
 
 const STEPS = [
   { label: "Load all 62 data room documents", duration: "~5s" },
-  { label: "Analyst Alpha assesses 42 checklist items (conservative lens)", duration: "~60s" },
-  { label: "Analyst Beta assesses 42 checklist items (balanced lens)", duration: "~60s" },
-  { label: "Analyst Gamma assesses 42 checklist items (growth lens)", duration: "~60s" },
+  { label: "Analyst Alpha reviews 42 items — Claude claude-sonnet-4-6 (Anthropic)", duration: "~60-90s" },
+  { label: "Analyst Beta reviews 42 items — GPT-5.2 (OpenAI)", duration: "~60-90s" },
+  { label: "Analyst Gamma reviews 42 items — Gemini 2.5 Pro (Google)", duration: "~60-90s" },
   { label: "Aggregate ratings, detect disagreement, route to reviewers", duration: "~5s" },
   { label: "Generate Steering Report with priority triage", duration: "~2s" },
 ];
 
 export default function AnalysisPage() {
-  const [isRunning, setIsRunning] = useState(false);
-  const [phase, setPhase] = useState(0);
+  const [polling, setPolling] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const queryClient = useQueryClient();
 
-  const { data: cachedData } = useGetCachedReport();
+  const { data: cachedData, refetch } = useGetCachedReport();
   const { mutateAsync: runAnalysis } = useRunAnalysis();
 
+  const serverStatus = (cachedData as any)?.status as string | undefined;
+  const isRunning = serverStatus === "running" || polling;
   const hasReport = cachedData?.hasCache;
   const reportDate = cachedData?.report?.generatedAt;
 
+  // Active step based on elapsed time (rough estimate for UX)
+  const activeStep = isRunning
+    ? elapsedSeconds < 5 ? 1
+    : elapsedSeconds < 95 ? 2
+    : elapsedSeconds < 185 ? 3
+    : elapsedSeconds < 275 ? 4
+    : 5
+    : hasReport ? STEPS.length : 0;
+
+  // Poll while running
+  useEffect(() => {
+    if (!polling) return;
+    const poll = setInterval(async () => {
+      const result = await refetch();
+      const status = (result.data as any)?.status;
+      if (status === "complete") {
+        clearInterval(poll);
+        clearInterval(timerRef.current!);
+        setPolling(false);
+        queryClient.invalidateQueries({ queryKey: ["getCachedReport"] });
+        toast.success("Analysis complete! Steering report is ready.");
+      } else if (status === "error") {
+        clearInterval(poll);
+        clearInterval(timerRef.current!);
+        setPolling(false);
+        const err = (result.data as any)?.error ?? "Unknown error";
+        toast.error(`Analysis failed: ${err}`);
+      }
+    }, 4000);
+    return () => clearInterval(poll);
+  }, [polling]);
+
   async function handleRun() {
     if (isRunning) return;
-    setIsRunning(true);
-    setPhase(1);
-
-    const interval = setInterval(() => {
-      setPhase((p) => {
-        if (p >= STEPS.length - 1) {
-          clearInterval(interval);
-          return p;
-        }
-        return p + 1;
-      });
-    }, 45000);
-
+    setElapsedSeconds(0);
     try {
       await runAnalysis({});
-      clearInterval(interval);
-      setPhase(STEPS.length);
-      queryClient.invalidateQueries({ queryKey: ["getCachedReport"] });
-      toast.success("Analysis complete! Steering report is ready.");
+      setPolling(true);
+      // Elapsed timer
+      timerRef.current = setInterval(() => {
+        setElapsedSeconds((s) => s + 1);
+      }, 1000);
     } catch (err) {
-      clearInterval(interval);
-      toast.error("Analysis failed. Check API server logs.");
+      toast.error("Could not start analysis. Check API server.");
       console.error(err);
-    } finally {
-      setIsRunning(false);
-      setPhase(0);
     }
   }
+
+  // Clean up timer on unmount
+  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
+
+  const formatElapsed = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
+  };
 
   return (
     <div className="p-8">
@@ -103,8 +132,8 @@ export default function AnalysisPage() {
           </div>
           <h1 className="text-2xl font-bold text-slate-900">Run Analysis</h1>
           <p className="text-slate-500 text-sm mt-1">
-            Three independent AI analysts review all 62 documents against the 42-item checklist.
-            Each analyst rates every item GREEN, AMBER, or RED with a confidence score.
+            Three independent AI analysts — each on a different model — review all 62 documents against the 42-item checklist.
+            Runs take <strong>3–5 minutes</strong> and execute in the background; you can safely navigate away.
           </p>
         </div>
 
@@ -137,15 +166,22 @@ export default function AnalysisPage() {
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm mb-6">
-          <h2 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-slate-400" />
-            Analysis Pipeline (~3-5 minutes)
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-slate-800 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-slate-400" />
+              Analysis Pipeline (~3-5 minutes)
+            </h2>
+            {isRunning && (
+              <span className="text-sm font-mono text-blue-600 font-semibold">
+                {formatElapsed(elapsedSeconds)} elapsed
+              </span>
+            )}
+          </div>
           <div className="space-y-3">
             {STEPS.map((step, i) => {
               const stepNum = i + 1;
-              const isActive = isRunning && phase === stepNum;
-              const isDone = phase > stepNum || (!isRunning && phase === STEPS.length);
+              const isActive = isRunning && activeStep === stepNum;
+              const isDone = (!isRunning && hasReport) || (isRunning && activeStep > stepNum);
               const isPending = !isActive && !isDone;
 
               return (
@@ -182,7 +218,7 @@ export default function AnalysisPage() {
           </div>
         </div>
 
-        {hasReport && (
+        {hasReport && !isRunning && (
           <div className="rounded-xl border border-green-200 bg-green-50 p-4 mb-6 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-green-600" />
@@ -201,6 +237,20 @@ export default function AnalysisPage() {
           </div>
         )}
 
+        {isRunning && (
+          <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 mb-6 flex items-center gap-3">
+            <Loader2 className="w-5 h-5 text-blue-600 animate-spin shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-blue-800">
+                Analysis running in background — all three models running in parallel
+              </p>
+              <p className="text-xs text-blue-600 mt-0.5">
+                You can navigate away and come back. The report will appear automatically when ready.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center gap-4">
           <button
             onClick={handleRun}
@@ -215,7 +265,7 @@ export default function AnalysisPage() {
             {isRunning ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                Analyzing... (Step {phase}/{STEPS.length})
+                Analyzing... ({formatElapsed(elapsedSeconds)})
               </>
             ) : (
               <>
@@ -224,20 +274,21 @@ export default function AnalysisPage() {
               </>
             )}
           </button>
-          {isRunning && (
+          {!isRunning && (
             <div className="flex items-center gap-2 text-sm text-slate-500">
               <AlertTriangle className="w-4 h-4 text-amber-500" />
-              Do not close this page — analysis in progress
+              Est. 3–5 min · ~$0.10–0.40 in AI credits
             </div>
           )}
         </div>
 
         <div className="mt-6 p-4 rounded-xl bg-slate-50 border border-slate-200">
           <p className="text-xs text-slate-500 leading-relaxed">
-            <strong className="text-slate-700">Note:</strong> This analysis uses OpenAI AI Integrations (billed to your Replit credits).
-            Three independent model calls are made — one per analyst persona. Each call receives the full 62-document context
-            and 42-item checklist. Total estimated cost: ~$0.10–0.30 per run using GPT-5-mini. Results are cached in memory
-            and available via the Steering Report until the server restarts.
+            <strong className="text-slate-700">Models:</strong> Alpha uses <code className="bg-slate-100 px-1 rounded">claude-sonnet-4-6</code> (Anthropic) ·
+            Beta uses <code className="bg-slate-100 px-1 rounded">gpt-5.2</code> (OpenAI) ·
+            Gamma uses <code className="bg-slate-100 px-1 rounded">gemini-2.5-pro</code> (Google).
+            All three run in parallel. Results are cached on the server until it restarts.
+            Billed to your Replit AI credits.
           </p>
         </div>
       </div>
