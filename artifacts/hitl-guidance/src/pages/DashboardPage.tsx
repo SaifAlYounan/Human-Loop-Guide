@@ -112,14 +112,15 @@ export default function DashboardPage() {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: "GREEN", count: report.executiveSummary.greenCount, color: "bg-green-100 text-green-800 border-green-200" },
-                { label: "AMBER", count: report.executiveSummary.amberCount, color: "bg-amber-100 text-amber-800 border-amber-200" },
-                { label: "RED", count: report.executiveSummary.redCount, color: "bg-red-100 text-red-800 border-red-200" },
-                { label: "DISAGREE", count: report.executiveSummary.disagreeCount, color: "bg-purple-100 text-purple-800 border-purple-200" },
+                { label: "Cleared",  sub: "minimal review",           count: report.executiveSummary.greenCount,    color: "bg-green-100 text-green-800 border-green-200"   },
+                { label: "Review",   sub: "targeted review needed",    count: report.executiveSummary.amberCount,    color: "bg-amber-100 text-amber-800 border-amber-200"   },
+                { label: "Escalate", sub: "senior/partner review",     count: report.executiveSummary.redCount,      color: "bg-red-100 text-red-800 border-red-200"         },
+                { label: "Priority", sub: "models split",              count: report.executiveSummary.disagreeCount, color: "bg-purple-100 text-purple-800 border-purple-200" },
               ].map((s) => (
                 <div key={s.label} className={cn("rounded-lg border p-3 text-center", s.color)}>
                   <p className="text-2xl font-bold">{s.count}</p>
-                  <p className="text-xs font-semibold mt-0.5">{s.label}</p>
+                  <p className="text-xs font-bold mt-0.5">{s.label}</p>
+                  <p className="text-xs opacity-70 mt-0.5">{s.sub}</p>
                 </div>
               ))}
             </div>

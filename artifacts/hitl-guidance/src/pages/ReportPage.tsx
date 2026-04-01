@@ -20,9 +20,10 @@ import { Link } from "wouter";
 
 type Rating = "GREEN" | "AMBER" | "RED" | "DISAGREE";
 
-const RATING_CONFIG: Record<Rating, { label: string; icon: typeof CheckCircle2; bg: string; badge: string; border: string; text: string }> = {
+const RATING_CONFIG: Record<Rating, { label: string; sublabel: string; icon: typeof CheckCircle2; bg: string; badge: string; border: string; text: string }> = {
   GREEN: {
-    label: "Green",
+    label: "Cleared",
+    sublabel: "minimal review",
     icon: CheckCircle2,
     bg: "bg-green-50",
     badge: "bg-green-100 text-green-700",
@@ -30,7 +31,8 @@ const RATING_CONFIG: Record<Rating, { label: string; icon: typeof CheckCircle2; 
     text: "text-green-700",
   },
   AMBER: {
-    label: "Amber",
+    label: "Review",
+    sublabel: "targeted review needed",
     icon: AlertTriangle,
     bg: "bg-amber-50",
     badge: "bg-amber-100 text-amber-700",
@@ -38,7 +40,8 @@ const RATING_CONFIG: Record<Rating, { label: string; icon: typeof CheckCircle2; 
     text: "text-amber-700",
   },
   RED: {
-    label: "Red",
+    label: "Escalate",
+    sublabel: "senior/partner review",
     icon: XCircle,
     bg: "bg-red-50",
     badge: "bg-red-100 text-red-700",
@@ -46,7 +49,8 @@ const RATING_CONFIG: Record<Rating, { label: string; icon: typeof CheckCircle2; 
     text: "text-red-700",
   },
   DISAGREE: {
-    label: "Disagree",
+    label: "Priority",
+    sublabel: "models split — highest priority",
     icon: Scale,
     bg: "bg-purple-50",
     badge: "bg-purple-100 text-purple-700",
@@ -273,7 +277,8 @@ export default function ReportPage() {
               >
                 <Icon className={cn("w-5 h-5 mx-auto mb-1", cfg.text)} />
                 <p className={cn("text-3xl font-bold", cfg.text)}>{count}</p>
-                <p className={cn("text-xs font-semibold mt-0.5", cfg.text)}>{cfg.label}</p>
+                <p className={cn("text-xs font-bold mt-0.5", cfg.text)}>{cfg.label}</p>
+                <p className={cn("text-xs opacity-70 mt-0.5", cfg.text)}>{cfg.sublabel}</p>
               </button>
             );
           })}
@@ -292,7 +297,7 @@ export default function ReportPage() {
               <div>
                 <p className="text-sm font-semibold text-slate-800">Overall Assessment</p>
                 <p className="text-xs text-slate-500">
-                  {summary.redCount + summary.disagreeCount} items requiring human review · {summary.greenCount} items cleared
+                  {summary.redCount} Escalate · {summary.disagreeCount} Priority · {summary.amberCount} Review · {summary.greenCount} Cleared
                 </p>
               </div>
             </div>
@@ -327,7 +332,7 @@ export default function ReportPage() {
         {activeTab === "priority" && (
           <div>
             <p className="text-sm text-slate-500 mb-4">
-              Items rated RED or where analysts DISAGREE — sorted by priority score
+              Items routed to <strong>Escalate</strong> or <strong>Priority</strong> — sorted by urgency for human review
             </p>
             <div className="space-y-3">
               {priorityItems.map((item: any) => (
@@ -336,7 +341,7 @@ export default function ReportPage() {
               {priorityItems.length === 0 && (
                 <div className="text-center py-12 text-slate-400">
                   <CheckCircle2 className="w-10 h-10 mx-auto mb-3 text-green-400" />
-                  <p>No RED or DISAGREE items — strong consensus!</p>
+                  <p>No Escalate or Priority items — strong consensus across all models!</p>
                 </div>
               )}
             </div>
@@ -348,7 +353,11 @@ export default function ReportPage() {
             <div className="flex items-center gap-2 mb-4">
               <Filter className="w-4 h-4 text-slate-400" />
               <div className="flex gap-2">
-                {(["ALL", "RED", "DISAGREE", "AMBER", "GREEN"] as const).map((f) => (
+                {(["ALL", "RED", "DISAGREE", "AMBER", "GREEN"] as const).map((f) => {
+                  const routeLabel: Record<string, string> = {
+                    ALL: "All", RED: "Escalate", DISAGREE: "Priority", AMBER: "Review", GREEN: "Cleared",
+                  };
+                  return (
                   <button
                     key={f}
                     onClick={() => setActiveFilter(f)}
@@ -361,9 +370,10 @@ export default function ReportPage() {
                         : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                     )}
                   >
-                    {f}
+                    {routeLabel[f]}
                   </button>
-                ))}
+                  );
+                })}
               </div>
               <span className="text-xs text-slate-400 ml-2">{filteredAll.length} items</span>
             </div>

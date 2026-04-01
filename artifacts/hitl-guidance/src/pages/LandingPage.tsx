@@ -98,7 +98,7 @@ export default function LandingPage() {
             <div className="space-y-3">
               {[
                 "Runs three independent AI analysts with distinct risk personas",
-                "Rates each of 42 checklist items GREEN / AMBER / RED",
+                "Routes each of 42 checklist items: Cleared / Review / Escalate / Priority",
                 "Surfaces disagreement between analysts for human adjudication",
                 "Routes each item to the right specialist reviewer",
                 "Identifies information gaps requiring follow-up",
