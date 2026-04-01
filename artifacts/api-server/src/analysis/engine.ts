@@ -1,5 +1,6 @@
 import { openai } from "@workspace/integrations-openai-ai-server";
-import { batchProcess } from "@workspace/integrations-openai-ai-server/batch";
+import { anthropic } from "@workspace/integrations-anthropic-ai";
+import { ai as gemini } from "@workspace/integrations-gemini-ai";
 import { documents } from "../data/documents.js";
 import { checklist } from "../data/checklist.js";
 import { analysts, buildDocumentContext, buildChecklistPrompt } from "./promptTemplates.js";
@@ -143,29 +144,57 @@ function computePriority(item: ReviewItem): number {
   return Math.round(base * 10 + (10 - avgConfidence));
 }
 
-async function runAnalystQuery(analystConfig: typeof analysts[0], documentContext: string, allChecklistItems: Array<{id: number; question: string}>): Promise<RawFinding[]> {
-  const userPrompt = buildChecklistPrompt(allChecklistItems, documentContext);
+function parseFindings(content: string, analystName: string): RawFinding[] {
+  try {
+    const jsonMatch = content.match(/\[[\s\S]*\]/);
+    if (jsonMatch) return JSON.parse(jsonMatch[0]) as RawFinding[];
+  } catch (e) {
+    console.error(`Failed to parse response from ${analystName}:`, e);
+  }
+  return [];
+}
 
+// Alpha — Claude claude-sonnet-4-6 (Anthropic)
+async function runAlphaQuery(analystConfig: typeof analysts[0], documentContext: string, allChecklistItems: Array<{id: number; question: string}>): Promise<RawFinding[]> {
+  const userPrompt = buildChecklistPrompt(allChecklistItems, documentContext);
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 8192,
+    system: analystConfig.systemPrompt,
+    messages: [{ role: "user", content: userPrompt }]
+  });
+  const content = response.content[0]?.type === "text" ? response.content[0].text : "[]";
+  return parseFindings(content, analystConfig.name);
+}
+
+// Beta — GPT-5.2 (OpenAI)
+async function runBetaQuery(analystConfig: typeof analysts[0], documentContext: string, allChecklistItems: Array<{id: number; question: string}>): Promise<RawFinding[]> {
+  const userPrompt = buildChecklistPrompt(allChecklistItems, documentContext);
   const response = await openai.chat.completions.create({
-    model: "gpt-5-mini",
+    model: "gpt-5.2",
     max_completion_tokens: 8192,
     messages: [
       { role: "system", content: analystConfig.systemPrompt },
       { role: "user", content: userPrompt }
     ]
   });
-
   const content = response.choices[0]?.message?.content ?? "[]";
+  return parseFindings(content, analystConfig.name);
+}
 
-  try {
-    const jsonMatch = content.match(/\[[\s\S]*\]/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]) as RawFinding[];
+// Gamma — Gemini 2.5 Pro (Google)
+async function runGammaQuery(analystConfig: typeof analysts[0], documentContext: string, allChecklistItems: Array<{id: number; question: string}>): Promise<RawFinding[]> {
+  const userPrompt = buildChecklistPrompt(allChecklistItems, documentContext);
+  const response = await gemini.models.generateContent({
+    model: "gemini-2.5-pro",
+    contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+    config: {
+      systemInstruction: analystConfig.systemPrompt,
+      maxOutputTokens: 8192
     }
-  } catch (e) {
-    console.error(`Failed to parse response from ${analystConfig.name}:`, e);
-  }
-  return [];
+  });
+  const content = response.text ?? "[]";
+  return parseFindings(content, analystConfig.name);
 }
 
 export async function runFullAnalysis(): Promise<SteeringReport> {
@@ -180,14 +209,12 @@ export async function runFullAnalysis(): Promise<SteeringReport> {
     });
   });
 
-  const [alphaFindings, betaFindings, gammaFindings] = await batchProcess(
-    analysts,
-    async (analyst) => {
-      console.log(`Running analysis for ${analyst.name}...`);
-      return runAnalystQuery(analyst, documentContext, allChecklistItems);
-    },
-    { concurrency: 3, retries: 3 }
-  );
+  console.log("Running Alpha (Claude claude-sonnet-4-6), Beta (GPT-5.2), Gamma (Gemini 2.5 Pro) in parallel...");
+  const [alphaFindings, betaFindings, gammaFindings] = await Promise.all([
+    runAlphaQuery(analysts[0], documentContext, allChecklistItems),
+    runBetaQuery(analysts[1], documentContext, allChecklistItems),
+    runGammaQuery(analysts[2], documentContext, allChecklistItems),
+  ]);
 
   const reviewItems: ReviewItem[] = allChecklistItems.map(checklistItem => {
     const id = checklistItem.id;

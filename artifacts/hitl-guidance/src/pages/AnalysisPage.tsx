@@ -10,29 +10,35 @@ const ANALYST_PROFILES = [
   {
     name: "Analyst Alpha",
     persona: "Conservative / Risk-Focused",
+    model: "claude-sonnet-4-6",
+    provider: "Anthropic",
     color: "border-red-200 bg-red-50",
     badgeColor: "bg-red-100 text-red-700",
+    modelColor: "bg-red-100 text-red-800",
     icon: "🔴",
     description: "Retained by the buyer to protect against hidden risks. Flags non-issues rather than miss real ones. Cautious, direct, document-specific.",
-    temperature: 0.3,
   },
   {
     name: "Analyst Beta",
     persona: "Balanced / Objective",
+    model: "gpt-5.2",
+    provider: "OpenAI",
     color: "border-amber-200 bg-amber-50",
     badgeColor: "bg-amber-100 text-amber-700",
+    modelColor: "bg-amber-100 text-amber-800",
     icon: "🟡",
     description: "M&A advisory firm analyst. Evidence-based and objective — weighs both risks and mitigating factors. Flags information gaps clearly.",
-    temperature: 0.7,
   },
   {
     name: "Analyst Gamma",
     persona: "Growth-Focused / Strategic",
+    model: "gemini-2.5-pro",
+    provider: "Google",
     color: "border-green-200 bg-green-50",
     badgeColor: "bg-green-100 text-green-700",
+    modelColor: "bg-green-100 text-green-800",
     icon: "🟢",
     description: "Restaurant M&A specialist. Looks for upside opportunities and scalable platforms. Still flags genuine RED items, but weighs strategic potential heavily.",
-    temperature: 1.0,
   },
 ];
 
@@ -120,9 +126,11 @@ export default function AnalysisPage() {
                 </div>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed">{analyst.description}</p>
-              <div className="mt-3 flex items-center gap-1">
-                <span className="text-xs text-slate-500">Temperature:</span>
-                <span className="text-xs font-mono font-semibold text-slate-700">{analyst.temperature}</span>
+              <div className="mt-3 flex items-center gap-2 flex-wrap">
+                <span className={cn("text-xs px-2 py-0.5 rounded font-mono font-semibold", analyst.modelColor)}>
+                  {analyst.model}
+                </span>
+                <span className="text-xs text-slate-400">{analyst.provider}</span>
               </div>
             </div>
           ))}
