@@ -1,24 +1,7 @@
 import { useGetChecklist } from "@workspace/api-client-react";
 import { CheckSquare, BookOpen } from "lucide-react";
-import { cn } from "@/lib/utils";
 
-const DIMENSION_COLORS: Record<string, string> = {
-  I: "bg-blue-600",
-  II: "bg-purple-600",
-  III: "bg-orange-500",
-  IV: "bg-teal-600",
-  V: "bg-pink-600",
-  VI: "bg-slate-700",
-};
-
-const DIMENSION_LIGHT: Record<string, string> = {
-  I: "bg-blue-50 border-blue-200",
-  II: "bg-purple-50 border-purple-200",
-  III: "bg-orange-50 border-orange-200",
-  IV: "bg-teal-50 border-teal-200",
-  V: "bg-pink-50 border-pink-200",
-  VI: "bg-slate-50 border-slate-200",
-};
+const NAVY = "#1B2A4A";
 
 export default function ChecklistPage() {
   const { data: checklist, isLoading } = useGetChecklist();
@@ -42,16 +25,11 @@ export default function ChecklistPage() {
             <a
               key={dim.code}
               href={`#dim-${dim.code}`}
-              className={cn(
-                "rounded-xl border p-4 transition-colors hover:shadow-md",
-                DIMENSION_LIGHT[dim.code] ?? "bg-slate-50 border-slate-200"
-              )}
+              className="rounded-xl border border-slate-200 bg-slate-50 p-4 transition-colors hover:shadow-md hover:border-slate-300"
             >
               <div
-                className={cn(
-                  "w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold mb-2",
-                  DIMENSION_COLORS[dim.code] ?? "bg-slate-600"
-                )}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold mb-2"
+                style={{ backgroundColor: NAVY }}
               >
                 {dim.code}
               </div>
@@ -73,10 +51,8 @@ export default function ChecklistPage() {
               <div key={dim.code} id={`dim-${dim.code}`}>
                 <div className="flex items-center gap-3 mb-4">
                   <div
-                    className={cn(
-                      "w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0",
-                      DIMENSION_COLORS[dim.code] ?? "bg-slate-600"
-                    )}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0"
+                    style={{ backgroundColor: NAVY }}
                   >
                     {dim.code}
                   </div>
@@ -85,28 +61,16 @@ export default function ChecklistPage() {
                 </div>
 
                 <div className="space-y-2">
-                  {dim.items.map((item, idx) => (
+                  {dim.items.map((item) => (
                     <div
                       key={item.id}
-                      className={cn(
-                        "flex items-start gap-4 p-4 rounded-xl border bg-white",
-                        DIMENSION_LIGHT[dim.code] ?? "border-slate-200"
-                      )}
+                      className="flex items-start gap-4 p-4 rounded-xl border border-slate-200 bg-white"
                     >
                       <div className="flex items-center gap-2 shrink-0">
                         <span className="text-slate-400 text-xs font-mono w-4 text-right">
                           {item.id}
                         </span>
-                        <CheckSquare
-                          className={cn("w-4 h-4 shrink-0", {
-                            "text-blue-400": dim.code === "I",
-                            "text-purple-400": dim.code === "II",
-                            "text-orange-400": dim.code === "III",
-                            "text-teal-400": dim.code === "IV",
-                            "text-pink-400": dim.code === "V",
-                            "text-slate-400": dim.code === "VI",
-                          })}
-                        />
+                        <CheckSquare className="w-4 h-4 shrink-0 text-slate-400" />
                       </div>
                       <div className="flex-1">
                         <p className="text-sm text-slate-800">{item.question}</p>
