@@ -89,20 +89,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         <div className="px-4 py-4 border-t border-white/10">
           <div className="rounded-lg p-3" style={{ backgroundColor: "rgba(255,255,255,0.05)" }}>
-            <p className="text-blue-200 text-xs font-medium">AI Analysts</p>
+            <p className="text-blue-200 text-xs font-medium">AI Models</p>
             <div className="mt-2 space-y-1.5">
               {[
-                { name: "Alpha", persona: "Conservative", color: "#ef4444" },
-                { name: "Beta", persona: "Balanced", color: "#f59e0b" },
-                { name: "Gamma", persona: "Growth-Focused", color: "#22c55e" },
-              ].map((a) => (
-                <div key={a.name} className="flex items-center gap-2">
+                { label: "Model A", model: "gpt-5.2",           color: "#60a5fa" },
+                { label: "Model B", model: "claude-sonnet-4-6", color: "#fb923c" },
+                { label: "Model C", model: "gemini-2.5-pro",    color: "#4ade80" },
+              ].map((m) => (
+                <div key={m.label} className="flex items-center gap-2">
                   <div
                     className="w-2 h-2 rounded-full shrink-0"
-                    style={{ backgroundColor: a.color }}
+                    style={{ backgroundColor: m.color }}
                   />
-                  <span className="text-blue-300 text-xs">
-                    {a.name} · {a.persona}
+                  <span className="text-blue-300 text-xs font-mono">
+                    {m.model}
                   </span>
                 </div>
               ))}

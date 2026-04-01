@@ -6,49 +6,37 @@ import { cn } from "@/lib/utils";
 import { Link } from "wouter";
 import { toast } from "sonner";
 
-const ANALYST_PROFILES = [
+const MODEL_CARDS = [
   {
-    name: "Analyst Alpha",
-    persona: "Conservative / Risk-Focused",
-    model: "claude-sonnet-4-6",
-    provider: "Anthropic",
-    color: "border-red-200 bg-red-50",
-    badgeColor: "bg-red-100 text-red-700",
-    modelColor: "bg-red-100 text-red-800",
-    icon: "🔴",
-    description: "Retained by the buyer to protect against hidden risks. Flags non-issues rather than miss real ones. Cautious, direct, document-specific.",
-  },
-  {
-    name: "Analyst Beta",
-    persona: "Balanced / Objective",
+    label: "Model A",
     model: "gpt-5.2",
     provider: "OpenAI",
-    color: "border-amber-200 bg-amber-50",
-    badgeColor: "bg-amber-100 text-amber-700",
-    modelColor: "bg-amber-100 text-amber-800",
-    icon: "🟡",
-    description: "M&A advisory firm analyst. Evidence-based and objective — weighs both risks and mitigating factors. Flags information gaps clearly.",
+    color: "border-blue-200 bg-blue-50",
+    badgeColor: "bg-blue-100 text-blue-800",
   },
   {
-    name: "Analyst Gamma",
-    persona: "Growth-Focused / Strategic",
+    label: "Model B",
+    model: "claude-sonnet-4-6",
+    provider: "Anthropic",
+    color: "border-orange-200 bg-orange-50",
+    badgeColor: "bg-orange-100 text-orange-800",
+  },
+  {
+    label: "Model C",
     model: "gemini-2.5-pro",
     provider: "Google",
     color: "border-green-200 bg-green-50",
-    badgeColor: "bg-green-100 text-green-700",
-    modelColor: "bg-green-100 text-green-800",
-    icon: "🟢",
-    description: "Restaurant M&A specialist. Looks for upside opportunities and scalable platforms. Still flags genuine RED items, but weighs strategic potential heavily.",
+    badgeColor: "bg-green-100 text-green-800",
   },
 ];
 
 const STEPS = [
-  { label: "Load all 62 data room documents", duration: "~5s" },
-  { label: "Analyst Alpha reviews 42 items — Claude claude-sonnet-4-6 (Anthropic)", duration: "~60-90s" },
-  { label: "Analyst Beta reviews 42 items — GPT-5.2 (OpenAI)", duration: "~60-90s" },
-  { label: "Analyst Gamma reviews 42 items — Gemini 2.5 Pro (Google)", duration: "~60-90s" },
-  { label: "Aggregate ratings, detect disagreement, route to reviewers", duration: "~5s" },
-  { label: "Generate Steering Report with priority triage", duration: "~2s" },
+  { label: "Load all 62 data room documents" },
+  { label: "Model A (GPT-5.2) — reviews all 42 checklist items" },
+  { label: "Model B (claude-sonnet-4-6) — reviews all 42 checklist items" },
+  { label: "Model C (gemini-2.5-pro) — reviews all 42 checklist items" },
+  { label: "Aggregate ratings, majority-vote consensus, route to reviewers" },
+  { label: "Generate Steering Report" },
 ];
 
 export default function AnalysisPage() {
@@ -65,7 +53,6 @@ export default function AnalysisPage() {
   const hasReport = cachedData?.hasCache;
   const reportDate = cachedData?.report?.generatedAt;
 
-  // Active step based on elapsed time (rough estimate for UX)
   const activeStep = isRunning
     ? elapsedSeconds < 5 ? 1
     : elapsedSeconds < 95 ? 2
@@ -74,7 +61,6 @@ export default function AnalysisPage() {
     : 5
     : hasReport ? STEPS.length : 0;
 
-  // Poll while running
   useEffect(() => {
     if (!polling) return;
     const poll = setInterval(async () => {
@@ -103,17 +89,13 @@ export default function AnalysisPage() {
     try {
       await runAnalysis({});
       setPolling(true);
-      // Elapsed timer
-      timerRef.current = setInterval(() => {
-        setElapsedSeconds((s) => s + 1);
-      }, 1000);
+      timerRef.current = setInterval(() => setElapsedSeconds(s => s + 1), 1000);
     } catch (err) {
       toast.error("Could not start analysis. Check API server.");
       console.error(err);
     }
   }
 
-  // Clean up timer on unmount
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
 
   const formatElapsed = (s: number) => {
@@ -132,35 +114,29 @@ export default function AnalysisPage() {
           </div>
           <h1 className="text-2xl font-bold text-slate-900">Run Analysis</h1>
           <p className="text-slate-500 text-sm mt-1">
-            Three independent AI analysts — each on a different model — review all 62 documents against the 42-item checklist.
-            Runs take <strong>3–5 minutes</strong> and execute in the background; you can safely navigate away.
+            Three different AI models receive the <strong>exact same prompt</strong> and the <strong>exact same 42-item checklist</strong>.
+            The value comes from model diversity — not prompt diversity. Runs take 3–5 minutes in the background.
+          </p>
+        </div>
+
+        <div className="mb-6 p-4 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-600 leading-relaxed font-mono">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Single system prompt — sent to all three models identically</p>
+          <p className="text-slate-700 italic">
+            "You are a due diligence analyst. For each of the 42 checklist items, review all provided documents and return a JSON array.
+            Each item must have: itemNumber (integer), rating (exactly one of: GREEN, AMBER, RED), confidence (integer 1-10), rationale
+            (2-3 sentences citing specific documents and numbers). If information is missing, rate AMBER. If two documents contradict
+            each other, rate RED and cite both. Return ONLY valid JSON, no other text."
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          {ANALYST_PROFILES.map((analyst) => (
-            <div
-              key={analyst.name}
-              className={cn("rounded-xl border p-5", analyst.color)}
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-lg">{analyst.icon}</span>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-800">{analyst.name}</h3>
-                  <span
-                    className={cn("text-xs px-1.5 py-0.5 rounded font-medium", analyst.badgeColor)}
-                  >
-                    {analyst.persona}
-                  </span>
-                </div>
-              </div>
-              <p className="text-xs text-slate-600 leading-relaxed">{analyst.description}</p>
-              <div className="mt-3 flex items-center gap-2 flex-wrap">
-                <span className={cn("text-xs px-2 py-0.5 rounded font-mono font-semibold", analyst.modelColor)}>
-                  {analyst.model}
-                </span>
-                <span className="text-xs text-slate-400">{analyst.provider}</span>
-              </div>
+          {MODEL_CARDS.map((m) => (
+            <div key={m.label} className={cn("rounded-xl border p-5", m.color)}>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">{m.label}</p>
+              <p className={cn("text-sm font-mono font-bold px-2 py-1 rounded inline-block mb-1", m.badgeColor)}>
+                {m.model}
+              </p>
+              <p className="text-xs text-slate-500">{m.provider}</p>
             </div>
           ))}
         </div>
@@ -169,7 +145,7 @@ export default function AnalysisPage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-slate-800 flex items-center gap-2">
               <Clock className="w-4 h-4 text-slate-400" />
-              Analysis Pipeline (~3-5 minutes)
+              Analysis Pipeline (~3-5 minutes, all models run in parallel)
             </h2>
             {isRunning && (
               <span className="text-sm font-mono text-blue-600 font-semibold">
@@ -183,7 +159,6 @@ export default function AnalysisPage() {
               const isActive = isRunning && activeStep === stepNum;
               const isDone = (!isRunning && hasReport) || (isRunning && activeStep > stepNum);
               const isPending = !isActive && !isDone;
-
               return (
                 <div
                   key={i}
@@ -202,16 +177,13 @@ export default function AnalysisPage() {
                       <span className="text-xs font-mono text-slate-400">{stepNum}</span>
                     )}
                   </div>
-                  <p
-                    className={cn("text-sm flex-1", {
-                      "text-blue-800 font-medium": isActive,
-                      "text-green-700": isDone,
-                      "text-slate-500": isPending,
-                    })}
-                  >
+                  <p className={cn("text-sm flex-1", {
+                    "text-blue-800 font-medium": isActive,
+                    "text-green-700": isDone,
+                    "text-slate-500": isPending,
+                  })}>
                     {step.label}
                   </p>
-                  <span className="text-xs text-slate-400 shrink-0">{step.duration}</span>
                 </div>
               );
             })}
@@ -225,9 +197,7 @@ export default function AnalysisPage() {
               <div>
                 <p className="text-sm font-semibold text-green-800">Steering report available</p>
                 {reportDate && (
-                  <p className="text-xs text-green-600">
-                    Generated: {new Date(reportDate).toLocaleString()}
-                  </p>
+                  <p className="text-xs text-green-600">Generated: {new Date(reportDate).toLocaleString()}</p>
                 )}
               </div>
             </div>
@@ -242,10 +212,10 @@ export default function AnalysisPage() {
             <Loader2 className="w-5 h-5 text-blue-600 animate-spin shrink-0" />
             <div>
               <p className="text-sm font-semibold text-blue-800">
-                Analysis running in background — all three models running in parallel
+                Running in background — all three models processing in parallel
               </p>
               <p className="text-xs text-blue-600 mt-0.5">
-                You can navigate away and come back. The report will appear automatically when ready.
+                You can navigate away. The report will appear automatically when ready.
               </p>
             </div>
           </div>
@@ -277,19 +247,9 @@ export default function AnalysisPage() {
           {!isRunning && (
             <div className="flex items-center gap-2 text-sm text-slate-500">
               <AlertTriangle className="w-4 h-4 text-amber-500" />
-              Est. 3–5 min · ~$0.10–0.40 in AI credits
+              Est. 3–5 min · ~$0.10–0.50 in AI credits
             </div>
           )}
-        </div>
-
-        <div className="mt-6 p-4 rounded-xl bg-slate-50 border border-slate-200">
-          <p className="text-xs text-slate-500 leading-relaxed">
-            <strong className="text-slate-700">Models:</strong> Alpha uses <code className="bg-slate-100 px-1 rounded">claude-sonnet-4-6</code> (Anthropic) ·
-            Beta uses <code className="bg-slate-100 px-1 rounded">gpt-5.2</code> (OpenAI) ·
-            Gamma uses <code className="bg-slate-100 px-1 rounded">gemini-2.5-pro</code> (Google).
-            All three run in parallel. Results are cached on the server until it restarts.
-            Billed to your Replit AI credits.
-          </p>
         </div>
       </div>
     </div>

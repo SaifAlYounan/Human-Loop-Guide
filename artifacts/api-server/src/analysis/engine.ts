@@ -3,7 +3,7 @@ import { anthropic } from "@workspace/integrations-anthropic-ai";
 import { ai as gemini } from "@workspace/integrations-gemini-ai";
 import { documents } from "../data/documents.js";
 import { checklist } from "../data/checklist.js";
-import { analysts, buildDocumentContext, buildChecklistPrompt } from "./promptTemplates.js";
+import { models, SYSTEM_PROMPT, buildDocumentContext, buildUserPrompt } from "./promptTemplates.js";
 
 export interface ModelFinding {
   analyst: string;
@@ -48,10 +48,10 @@ export interface SteeringReport {
 }
 
 interface RawFinding {
-  id: number;
+  itemNumber: number;
   rating: string;
   confidence: number;
-  summary: string;
+  rationale: string;
 }
 
 const REVIEWER_ROUTING: Record<number, { routeTo: string; focusOn: string; estimatedMinutes: number }> = {
@@ -100,41 +100,94 @@ const REVIEWER_ROUTING: Record<number, { routeTo: string; focusOn: string; estim
 };
 
 function normalizeRating(raw: string): "GREEN" | "AMBER" | "RED" {
-  const upper = raw?.toUpperCase()?.trim();
+  const upper = (raw ?? "").toUpperCase().trim();
   if (upper === "GREEN") return "GREEN";
   if (upper === "RED") return "RED";
   return "AMBER";
 }
 
-function determineConsensus(findings: ModelFinding[]): { consensusRating: "GREEN" | "AMBER" | "RED" | "DISAGREE"; disagreementInsight?: string } {
+function parseFindings(rawContent: string, modelLabel: string): RawFinding[] {
+  // Log first 500 chars of raw response for debugging
+  console.log(`[${modelLabel}] Raw response (first 500 chars):`, rawContent.slice(0, 500));
+
+  // Strip markdown code fences if present
+  let content = rawContent.trim();
+  content = content.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+
+  // Try to extract a JSON array
+  const arrayMatch = content.match(/\[[\s\S]*\]/);
+  if (!arrayMatch) {
+    console.error(`[${modelLabel}] No JSON array found in response. Full response length: ${rawContent.length}`);
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(arrayMatch[0]);
+    if (!Array.isArray(parsed)) {
+      console.error(`[${modelLabel}] Parsed JSON is not an array`);
+      return [];
+    }
+    console.log(`[${modelLabel}] Successfully parsed ${parsed.length} items`);
+
+    // Normalise field names — support both itemNumber and id
+    return parsed.map((item: any) => ({
+      itemNumber: item.itemNumber ?? item.id ?? 0,
+      rating: item.rating ?? "AMBER",
+      confidence: item.confidence ?? 5,
+      rationale: item.rationale ?? item.summary ?? "No rationale provided.",
+    }));
+  } catch (err) {
+    console.error(`[${modelLabel}] JSON.parse failed:`, err);
+    // Attempt partial recovery: find as many complete objects as possible
+    const objects: RawFinding[] = [];
+    const objRegex = /\{[^{}]*"itemNumber"\s*:\s*(\d+)[^{}]*"rating"\s*:\s*"(GREEN|AMBER|RED)"[^{}]*\}/g;
+    let match;
+    while ((match = objRegex.exec(arrayMatch[0])) !== null) {
+      try {
+        objects.push(JSON.parse(match[0]));
+      } catch {}
+    }
+    console.log(`[${modelLabel}] Partial recovery: found ${objects.length} objects`);
+    return objects;
+  }
+}
+
+// Majority-vote consensus: 3 identical → consensus; 2 same + 1 different → majority wins (RED elevated)
+function determineConsensus(findings: ModelFinding[]): {
+  consensusRating: "GREEN" | "AMBER" | "RED" | "DISAGREE";
+  disagreementInsight?: string;
+} {
   const ratings = findings.map(f => f.rating);
-  const hasRed = ratings.includes("RED");
-  const hasGreen = ratings.includes("GREEN");
+  const counts: Record<string, number> = {};
+  for (const r of ratings) counts[r] = (counts[r] ?? 0) + 1;
 
-  if (ratings.every(r => r === "GREEN")) return { consensusRating: "GREEN" };
-  if (ratings.every(r => r === "RED")) return { consensusRating: "RED" };
-  if (ratings.every(r => r === "AMBER")) return { consensusRating: "AMBER" };
+  // All three agree
+  if (counts["GREEN"] === 3) return { consensusRating: "GREEN" };
+  if (counts["AMBER"] === 3) return { consensusRating: "AMBER" };
+  if (counts["RED"] === 3)   return { consensusRating: "RED" };
 
+  // Two agree (majority) — RED is elevated: if any 2 say RED → RED even if one says AMBER
+  if ((counts["RED"] ?? 0) >= 2)   return { consensusRating: "RED" };
+  if ((counts["GREEN"] ?? 0) >= 2) return { consensusRating: "GREEN" };
+  if ((counts["AMBER"] ?? 0) >= 2) return { consensusRating: "AMBER" };
+
+  // Three-way split or RED vs GREEN (no clear majority)
+  const hasRed   = (counts["RED"] ?? 0) > 0;
+  const hasGreen = (counts["GREEN"] ?? 0) > 0;
+  const redModels   = findings.filter(f => f.rating === "RED").map(f => f.analyst).join(", ");
+  const greenModels = findings.filter(f => f.rating === "GREEN").map(f => f.analyst).join(", ");
+  const amberModels = findings.filter(f => f.rating === "AMBER").map(f => f.analyst).join(", ");
+
+  let insight = "Models disagree: ";
   if (hasRed && hasGreen) {
-    const redAnalysts = findings.filter(f => f.rating === "RED").map(f => f.analyst).join(", ");
-    const greenAnalysts = findings.filter(f => f.rating === "GREEN").map(f => f.analyst).join(", ");
-    return {
-      consensusRating: "DISAGREE",
-      disagreementInsight: `${redAnalysts} flagged this as RED while ${greenAnalysts} rated it GREEN. Human review required to resolve opposing assessments.`
-    };
+    insight += `${redModels} rated RED; ${greenModels} rated GREEN. Human adjudication required.`;
+  } else if (hasRed) {
+    insight += `${redModels} rated RED; ${amberModels} rated AMBER. Elevate to senior review.`;
+  } else {
+    insight += `${greenModels} rated GREEN; ${amberModels} rated AMBER. May need additional clarification.`;
   }
 
-  if (hasRed) {
-    return {
-      consensusRating: "DISAGREE",
-      disagreementInsight: `Analysts disagree: some rate RED, others AMBER. Elevate to senior review.`
-    };
-  }
-
-  return {
-    consensusRating: "DISAGREE",
-    disagreementInsight: `Analysts split between AMBER and GREEN. May require additional clarification before closing.`
-  };
+  return { consensusRating: "DISAGREE", disagreementInsight: insight };
 }
 
 function computePriority(item: ReviewItem): number {
@@ -144,64 +197,59 @@ function computePriority(item: ReviewItem): number {
   return Math.round(base * 10 + (10 - avgConfidence));
 }
 
-function parseFindings(content: string, analystName: string): RawFinding[] {
-  try {
-    const jsonMatch = content.match(/\[[\s\S]*\]/);
-    if (jsonMatch) return JSON.parse(jsonMatch[0]) as RawFinding[];
-  } catch (e) {
-    console.error(`Failed to parse response from ${analystName}:`, e);
-  }
-  return [];
-}
-
-// Alpha — Claude claude-sonnet-4-6 (Anthropic)
-async function runAlphaQuery(analystConfig: typeof analysts[0], documentContext: string, allChecklistItems: Array<{id: number; question: string}>): Promise<RawFinding[]> {
-  const userPrompt = buildChecklistPrompt(allChecklistItems, documentContext);
-  const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 8192,
-    system: analystConfig.systemPrompt,
-    messages: [{ role: "user", content: userPrompt }]
-  });
-  const content = response.content[0]?.type === "text" ? response.content[0].text : "[]";
-  return parseFindings(content, analystConfig.name);
-}
-
-// Beta — GPT-5.2 (OpenAI)
-async function runBetaQuery(analystConfig: typeof analysts[0], documentContext: string, allChecklistItems: Array<{id: number; question: string}>): Promise<RawFinding[]> {
-  const userPrompt = buildChecklistPrompt(allChecklistItems, documentContext);
+async function runOpenAI(userPrompt: string): Promise<RawFinding[]> {
+  const cfg = models[0];
+  console.log(`[${cfg.label}] Starting API call...`);
   const response = await openai.chat.completions.create({
-    model: "gpt-5.2",
-    max_completion_tokens: 8192,
+    model: cfg.model,
+    max_completion_tokens: 16000,
     messages: [
-      { role: "system", content: analystConfig.systemPrompt },
-      { role: "user", content: userPrompt }
-    ]
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user",   content: userPrompt },
+    ],
   });
-  const content = response.choices[0]?.message?.content ?? "[]";
-  return parseFindings(content, analystConfig.name);
+  const content = response.choices[0]?.message?.content ?? "";
+  console.log(`[${cfg.label}] Response received, length: ${content.length}`);
+  return parseFindings(content, cfg.label);
 }
 
-// Gamma — Gemini 2.5 Pro (Google)
-async function runGammaQuery(analystConfig: typeof analysts[0], documentContext: string, allChecklistItems: Array<{id: number; question: string}>): Promise<RawFinding[]> {
-  const userPrompt = buildChecklistPrompt(allChecklistItems, documentContext);
+async function runAnthropic(userPrompt: string): Promise<RawFinding[]> {
+  const cfg = models[1];
+  console.log(`[${cfg.label}] Starting API call...`);
+  const response = await anthropic.messages.create({
+    model: cfg.model,
+    max_tokens: 16000,
+    system: SYSTEM_PROMPT,
+    messages: [{ role: "user", content: userPrompt }],
+  });
+  const content = response.content[0]?.type === "text" ? response.content[0].text : "";
+  console.log(`[${cfg.label}] Response received, length: ${content.length}`);
+  return parseFindings(content, cfg.label);
+}
+
+async function runGemini(userPrompt: string): Promise<RawFinding[]> {
+  const cfg = models[2];
+  console.log(`[${cfg.label}] Starting API call...`);
   const response = await gemini.models.generateContent({
-    model: "gemini-2.5-pro",
+    model: cfg.model,
     contents: [{ role: "user", parts: [{ text: userPrompt }] }],
     config: {
-      systemInstruction: analystConfig.systemPrompt,
-      maxOutputTokens: 8192
-    }
+      systemInstruction: SYSTEM_PROMPT,
+      maxOutputTokens: 16000,
+    },
   });
-  const content = response.text ?? "[]";
-  return parseFindings(content, analystConfig.name);
+  const content = response.text ?? "";
+  console.log(`[${cfg.label}] Response received, length: ${content.length}`);
+  return parseFindings(content, cfg.label);
 }
 
 export async function runFullAnalysis(): Promise<SteeringReport> {
-  const allDocs = documents;
-  const documentContext = buildDocumentContext(allDocs.map(d => ({ id: d.id, title: d.title, content: d.content })));
-
-  const allChecklistItems = checklist.flatMap(dim => dim.items.map(item => ({ id: item.id, question: item.question })));
+  const documentContext = buildDocumentContext(
+    documents.map(d => ({ id: d.id, title: d.title, content: d.content }))
+  );
+  const allChecklistItems = checklist.flatMap(dim =>
+    dim.items.map(item => ({ id: item.id, question: item.question }))
+  );
   const checklistMap = new Map<number, { question: string; relevantDocuments: string[] }>();
   checklist.forEach(dim => {
     dim.items.forEach(item => {
@@ -209,48 +257,55 @@ export async function runFullAnalysis(): Promise<SteeringReport> {
     });
   });
 
-  console.log("Running Alpha (Claude claude-sonnet-4-6), Beta (GPT-5.2), Gamma (Gemini 2.5 Pro) in parallel...");
-  const [alphaFindings, betaFindings, gammaFindings] = await Promise.all([
-    runAlphaQuery(analysts[0], documentContext, allChecklistItems),
-    runBetaQuery(analysts[1], documentContext, allChecklistItems),
-    runGammaQuery(analysts[2], documentContext, allChecklistItems),
+  const userPrompt = buildUserPrompt(allChecklistItems, documentContext);
+  console.log(`User prompt length: ${userPrompt.length} chars`);
+  console.log(`Running ${models[0].label}, ${models[1].label}, ${models[2].label} in parallel...`);
+
+  const [openaiFindings, anthropicFindings, geminiFindings] = await Promise.all([
+    runOpenAI(userPrompt),
+    runAnthropic(userPrompt),
+    runGemini(userPrompt),
   ]);
+
+  console.log(`Findings counts — OpenAI: ${openaiFindings.length}, Anthropic: ${anthropicFindings.length}, Gemini: ${geminiFindings.length}`);
 
   const reviewItems: ReviewItem[] = allChecklistItems.map(checklistItem => {
     const id = checklistItem.id;
-    const alphaRaw = alphaFindings.find((f: RawFinding) => f.id === id);
-    const betaRaw = betaFindings.find((f: RawFinding) => f.id === id);
-    const gammaRaw = gammaFindings.find((f: RawFinding) => f.id === id);
 
+    const aRaw = openaiFindings.find(f => f.itemNumber === id);
+    const bRaw = anthropicFindings.find(f => f.itemNumber === id);
+    const cRaw = geminiFindings.find(f => f.itemNumber === id);
+
+    // Default all to AMBER so a single missing response doesn't manufacture a DISAGREE
     const findings: ModelFinding[] = [
       {
-        analyst: "Analyst Alpha (Conservative)",
-        rating: normalizeRating(alphaRaw?.rating ?? "AMBER"),
-        confidence: alphaRaw?.confidence ?? 5,
-        summary: alphaRaw?.summary ?? "Analysis not available."
+        analyst: models[0].label,
+        rating: normalizeRating(aRaw?.rating ?? "AMBER"),
+        confidence: aRaw?.confidence ?? 5,
+        summary: aRaw?.rationale ?? "Response not available.",
       },
       {
-        analyst: "Analyst Beta (Balanced)",
-        rating: normalizeRating(betaRaw?.rating ?? "AMBER"),
-        confidence: betaRaw?.confidence ?? 5,
-        summary: betaRaw?.summary ?? "Analysis not available."
+        analyst: models[1].label,
+        rating: normalizeRating(bRaw?.rating ?? "AMBER"),
+        confidence: bRaw?.confidence ?? 5,
+        summary: bRaw?.rationale ?? "Response not available.",
       },
       {
-        analyst: "Analyst Gamma (Growth-Focused)",
-        rating: normalizeRating(gammaRaw?.rating ?? "GREEN"),
-        confidence: gammaRaw?.confidence ?? 5,
-        summary: gammaRaw?.summary ?? "Analysis not available."
-      }
+        analyst: models[2].label,
+        rating: normalizeRating(cRaw?.rating ?? "AMBER"),
+        confidence: cRaw?.confidence ?? 5,
+        summary: cRaw?.rationale ?? "Response not available.",
+      },
     ];
 
     const { consensusRating, disagreementInsight } = determineConsensus(findings);
     const routing = REVIEWER_ROUTING[id] ?? {
       routeTo: "Senior Deal Partner",
       focusOn: "Review relevant documents",
-      estimatedMinutes: 30
+      estimatedMinutes: 30,
     };
-
     const itemMeta = checklistMap.get(id)!;
+
     const item: ReviewItem = {
       checklistId: id,
       question: checklistItem.question,
@@ -261,7 +316,7 @@ export async function runFullAnalysis(): Promise<SteeringReport> {
       focusOn: routing.focusOn,
       estimatedMinutes: routing.estimatedMinutes,
       relevantDocuments: itemMeta.relevantDocuments,
-      priority: 0
+      priority: 0,
     };
     item.priority = computePriority(item);
     return item;
@@ -269,12 +324,12 @@ export async function runFullAnalysis(): Promise<SteeringReport> {
 
   reviewItems.sort((a, b) => b.priority - a.priority);
 
-  const priorityItems = reviewItems.filter(i => i.consensusRating === "RED" || i.consensusRating === "DISAGREE");
+  const priorityItems  = reviewItems.filter(i => i.consensusRating === "RED" || i.consensusRating === "DISAGREE");
   const consensusItems = reviewItems.filter(i => i.consensusRating === "GREEN" || i.consensusRating === "AMBER");
 
-  const greenCount = reviewItems.filter(i => i.consensusRating === "GREEN").length;
-  const amberCount = reviewItems.filter(i => i.consensusRating === "AMBER").length;
-  const redCount = reviewItems.filter(i => i.consensusRating === "RED").length;
+  const greenCount    = reviewItems.filter(i => i.consensusRating === "GREEN").length;
+  const amberCount    = reviewItems.filter(i => i.consensusRating === "AMBER").length;
+  const redCount      = reviewItems.filter(i => i.consensusRating === "RED").length;
   const disagreeCount = reviewItems.filter(i => i.consensusRating === "DISAGREE").length;
 
   let overallRisk: "LOW" | "MODERATE" | "ELEVATED" = "LOW";
@@ -284,38 +339,32 @@ export async function runFullAnalysis(): Promise<SteeringReport> {
   const informationGaps: InformationGap[] = [
     {
       description: "Maria K Catering arrangement: The financial impact of kitchen/equipment use has not been quantified or independently verified.",
-      impact: "Potential misallocation of company resources; possible understated expenses in FY2024 and FY2025 financials."
+      impact: "Potential misallocation of company resources; possible understated expenses in FY2024 and FY2025 financials.",
     },
     {
       description: "Head chef (Dimitri Alexandros) post-acquisition intentions are undocumented. No retention agreement exists.",
-      impact: "Significant risk to restaurant operations and reputation if chef departs post-closing."
+      impact: "Significant risk to restaurant operations and reputation if chef departs post-closing.",
     },
     {
       description: "No formal lease renewal option exists. Landlord's renewal intentions have not been solicited or confirmed.",
-      impact: "Entire business valuation assumes continued occupation. Non-renewal would require relocation or closure."
+      impact: "Entire business valuation assumes continued occupation. Non-renewal would require relocation or closure.",
     },
     {
       description: "HVAC replacement responsibility is unclear under the lease — maintenance vs. replacement not defined.",
-      impact: "Potential $15,000-$22,000 unbudgeted CAPEX exposure within 1-3 years."
+      impact: "Potential $15,000-$22,000 unbudgeted CAPEX exposure within 1-3 years.",
     },
     {
       description: "No trademark attorney opinion has been rendered on the 'Olive & Thyme' brand. California conflict unresolved.",
-      impact: "Brand unprotected at federal level; expansion restrictions possible if California entity has superior rights."
-    }
+      impact: "Brand unprotected at federal level; expansion restrictions possible if California entity has superior rights.",
+    },
   ];
 
   return {
     generatedAt: new Date().toISOString(),
-    executiveSummary: {
-      greenCount,
-      amberCount,
-      redCount,
-      disagreeCount,
-      overallRisk
-    },
+    executiveSummary: { greenCount, amberCount, redCount, disagreeCount, overallRisk },
     priorityItems,
     consensusItems,
     informationGaps,
-    allItems: reviewItems
+    allItems: reviewItems,
   };
 }

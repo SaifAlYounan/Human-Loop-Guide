@@ -56,9 +56,9 @@ const RATING_CONFIG: Record<Rating, { label: string; icon: typeof CheckCircle2; 
 };
 
 const ANALYST_COLORS: Record<string, { dot: string; badge: string }> = {
-  "Analyst Alpha (Conservative)": { dot: "bg-red-400", badge: "bg-red-50 text-red-700 border-red-200" },
-  "Analyst Beta (Balanced)": { dot: "bg-amber-400", badge: "bg-amber-50 text-amber-700 border-amber-200" },
-  "Analyst Gamma (Growth-Focused)": { dot: "bg-green-400", badge: "bg-green-50 text-green-700 border-green-200" },
+  "Model A: GPT-5.2":            { dot: "bg-blue-400",   badge: "bg-blue-50 text-blue-700 border-blue-200"   },
+  "Model B: claude-sonnet-4-6":  { dot: "bg-orange-400", badge: "bg-orange-50 text-orange-700 border-orange-200" },
+  "Model C: gemini-2.5-pro":     { dot: "bg-green-400",  badge: "bg-green-50 text-green-700 border-green-200"  },
 };
 
 function RatingBadge({ rating }: { rating: Rating }) {
