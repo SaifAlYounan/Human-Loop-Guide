@@ -42,7 +42,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <h1 className="text-white font-bold text-sm leading-tight">
                 HITL Guidance
               </h1>
-              <p className="text-blue-200 text-xs opacity-70">M&A Due Diligence</p>
+              <p className="text-blue-200 text-xs opacity-70">M&A for Due Diligence</p>
             </div>
           </div>
           <div className="mt-4 rounded-lg p-3" style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>
