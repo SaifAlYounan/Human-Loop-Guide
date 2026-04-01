@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "sonner";
 import NotFound from "@/pages/not-found";
 import Layout from "@/components/Layout";
-import DashboardPage from "@/pages/DashboardPage";
+import LandingPage from "@/pages/LandingPage";
 import DocumentsPage from "@/pages/DocumentsPage";
 import ChecklistPage from "@/pages/ChecklistPage";
 import AnalysisPage from "@/pages/AnalysisPage";
@@ -14,23 +14,27 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      staleTime: 1000 * 60 * 5
-    }
-  }
+      staleTime: 1000 * 60 * 5,
+    },
+  },
 });
 
 function AppRoutes() {
   return (
-    <Layout>
-      <Switch>
-        <Route path="/" component={DashboardPage} />
-        <Route path="/documents" component={DocumentsPage} />
-        <Route path="/checklist" component={ChecklistPage} />
-        <Route path="/analysis" component={AnalysisPage} />
-        <Route path="/report" component={ReportPage} />
-        <Route component={NotFound} />
-      </Switch>
-    </Layout>
+    <Switch>
+      <Route path="/" component={LandingPage} />
+      <Route>
+        <Layout>
+          <Switch>
+            <Route path="/documents" component={DocumentsPage} />
+            <Route path="/checklist" component={ChecklistPage} />
+            <Route path="/analysis" component={AnalysisPage} />
+            <Route path="/report" component={ReportPage} />
+            <Route component={NotFound} />
+          </Switch>
+        </Layout>
+      </Route>
+    </Switch>
   );
 }
 
