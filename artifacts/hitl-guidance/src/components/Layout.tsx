@@ -7,10 +7,12 @@ import {
   Brain,
   FileBarChart2,
   ChevronRight,
+  Info,
 } from "lucide-react";
 
 const navItems = [
   { href: "/", icon: LayoutDashboard, label: "Home" },
+  { href: "/how-it-works", icon: Info, label: "How It Works" },
   { href: "/documents", icon: FileText, label: "Data Room (62 Docs)" },
   { href: "/checklist", icon: CheckSquare, label: "DD Checklist (42)" },
   { href: "/analysis", icon: Brain, label: "Run AI Analysis" },

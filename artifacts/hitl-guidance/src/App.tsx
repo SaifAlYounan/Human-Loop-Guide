@@ -9,6 +9,7 @@ import DocumentsPage from "@/pages/DocumentsPage";
 import ChecklistPage from "@/pages/ChecklistPage";
 import AnalysisPage from "@/pages/AnalysisPage";
 import ReportPage from "@/pages/ReportPage";
+import HowItWorksPage from "@/pages/HowItWorksPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,6 +27,7 @@ function AppRoutes() {
       <Route>
         <Layout>
           <Switch>
+            <Route path="/how-it-works" component={HowItWorksPage} />
             <Route path="/documents" component={DocumentsPage} />
             <Route path="/checklist" component={ChecklistPage} />
             <Route path="/analysis" component={AnalysisPage} />

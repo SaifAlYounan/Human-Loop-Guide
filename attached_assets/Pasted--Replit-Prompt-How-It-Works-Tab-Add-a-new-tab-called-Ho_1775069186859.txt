@@ -1,0 +1,101 @@
+# Replit Prompt — "How It Works" Tab
+
+Add a new tab called **"How It Works"** in the navigation bar (between Home and Data Room, or wherever fits naturally).
+
+## Design
+
+Match the existing DocuSign-style aesthetic:
+- Navy `#1B2A4A` for headings and primary text
+- Gold `#FFC72C` for accents and connector lines
+- White background, clean spacing
+- No clutter — this page should feel like a premium product explainer
+
+## Layout
+
+### Hero Section
+- Title: **"How It Works"**
+- Subtitle: *"Three AI models. One steering report. Zero blind spots."*
+
+### 4-Step Flow Diagram (horizontal on desktop, vertical on mobile)
+
+A visual pipeline with 4 connected steps. Use icons or simple illustrations (emoji-style or SVG icons are fine). Connect them with a gold `#FFC72C` line or arrow.
+
+**Step 1: Upload**
+- Icon: 📄 (or a document/folder icon)
+- Label: **"Data Room"**
+- Description: "Your deal documents, organized by category — financials, legal, operational, employment, and more."
+
+**Step 2: Review**
+- Icon: 🤖🤖🤖 (or three distinct model icons side by side)
+- Label: **"3 Independent AI Reviews"**
+- Description: "Three different AI models review every checklist item independently. Same prompt. Different models. No communication between them."
+
+**Step 3: Compare**
+- Icon: ⚖️ (or a consensus/comparison icon)
+- Label: **"Consensus Engine"**
+- Description: "The system compares all three opinions. When models agree, confidence is high. When they disagree, that's exactly where human expertise matters most."
+
+**Step 4: Report**
+- Icon: 📋 (or a report/clipboard icon)
+- Label: **"Steering Report"**
+- Description: "A prioritized action plan: what to review, who should review it, and how long it should take. Your team focuses on what matters — not on reading everything."
+
+### Routing Matrix Section (below the diagram)
+
+Title: **"How Items Get Routed"**
+
+Show a clean visual of the 4 routing levels as colored badges (same colors used in the steering report):
+
+| Badge | Level | Color | Meaning |
+|-------|-------|-------|---------|
+| 🟦 | CLEAR | Navy `#1B2A4A` | All models agree: low risk. Paralegal can verify. |
+| 🟨 | CHECK | Gold `#FFC72C` | Minor disagreement or medium risk. Associate reviews. |
+| 🟧 | REVIEW | Orange `#E88B3A` | Significant disagreement. Senior associate examines. |
+| 🟥 | ESCALATE | Coral `#E8614D` | Models disagree on high-risk item OR all flag high risk. Partner attention required. |
+
+Below the badges, one sentence:
+*"Colors belong to the system, not the models. Each model gives a plain-text risk rating. The system earns the right to use color because it represents the combined judgment."*
+
+### "Why Three Models?" Section
+
+Title: **"Why Three Models?"**
+
+Two columns (or stacked on mobile):
+
+**Left column — "The Problem with One Model"**
+- One AI reviewing documents is just automation
+- If it misses something, nobody catches it
+- You're trusting a single opinion on critical decisions
+- Same blind spots on every review
+
+**Right column — "The Advantage of Three"**
+- When all three agree, confidence is high — you can move fast
+- When they disagree, you've found exactly where human judgment matters
+- Different architectures catch different things
+- Disagreement IS the signal, not a bug
+
+### Bottom Section — Honesty Block (optional, can stay on Home instead)
+
+If you want to include it here too:
+
+Two columns:
+
+**"What this system does"**
+- Reads every document against a structured checklist
+- Flags disagreements between independent AI reviewers
+- Routes items to the right level of human expertise
+- Estimates review time to help resource planning
+
+**"What this system does NOT do"**
+- Replace professional judgment
+- Provide legal advice
+- Guarantee completeness
+- Make investment decisions
+
+---
+
+## Technical Notes
+- This is a static informational page — no API calls, no data processing
+- Should load instantly
+- Responsive: horizontal flow on desktop → vertical stack on mobile
+- Use CSS transitions or subtle animations on the step connectors if it feels natural (not required)
