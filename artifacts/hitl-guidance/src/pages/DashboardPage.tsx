@@ -110,30 +110,29 @@ export default function DashboardPage() {
                 View Report <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               {[
-                { label: "Cleared",  sub: "minimal review",           count: report.executiveSummary.greenCount,    color: "bg-green-100 text-green-800 border-green-200"   },
-                { label: "Review",   sub: "targeted review needed",    count: report.executiveSummary.amberCount,    color: "bg-amber-100 text-amber-800 border-amber-200"   },
-                { label: "Escalate", sub: "senior/partner review",     count: report.executiveSummary.redCount,      color: "bg-red-100 text-red-800 border-red-200"         },
-                { label: "Priority", sub: "models split",              count: report.executiveSummary.disagreeCount, color: "bg-purple-100 text-purple-800 border-purple-200" },
+                { label: "Consensus", sub: "all 3 models agree",   count: report.executiveSummary.consensusCount, bg: "#1B2A4A", fg: "#ffffff" },
+                { label: "Majority",  sub: "2 of 3 models agree",  count: report.executiveSummary.majorityCount,  bg: "#FFC72C", fg: "#1B2A4A" },
+                { label: "Split",     sub: "no consensus",          count: report.executiveSummary.splitCount,     bg: "#E8614D", fg: "#ffffff" },
               ].map((s) => (
-                <div key={s.label} className={cn("rounded-lg border p-3 text-center", s.color)}>
-                  <p className="text-2xl font-bold">{s.count}</p>
-                  <p className="text-xs font-bold mt-0.5">{s.label}</p>
-                  <p className="text-xs opacity-70 mt-0.5">{s.sub}</p>
+                <div key={s.label} className="rounded-lg border p-3 text-center" style={{ backgroundColor: s.bg, borderColor: s.bg }}>
+                  <p className="text-2xl font-bold" style={{ color: s.fg }}>{s.count}</p>
+                  <p className="text-xs font-bold mt-0.5" style={{ color: s.fg }}>{s.label}</p>
+                  <p className="text-xs mt-0.5" style={{ color: s.fg, opacity: 0.75 }}>{s.sub}</p>
                 </div>
               ))}
             </div>
             <div className="mt-3 flex items-center gap-2">
               <Scale className="w-4 h-4 text-slate-400" />
               <span className="text-sm text-slate-600">
-                Overall risk:{" "}
+                Agreement level:{" "}
                 <span className={cn("font-semibold", {
                   "text-green-700": report.executiveSummary.overallRisk === "LOW",
                   "text-amber-700": report.executiveSummary.overallRisk === "MODERATE",
                   "text-red-700": report.executiveSummary.overallRisk === "ELEVATED",
                 })}>
-                  {report.executiveSummary.overallRisk}
+                  {report.executiveSummary.overallRisk === "LOW" ? "High" : report.executiveSummary.overallRisk === "MODERATE" ? "Mixed" : "Low"}
                 </span>
               </span>
             </div>

@@ -4,79 +4,100 @@ import {
   FileBarChart2,
   AlertTriangle,
   CheckCircle2,
-  XCircle,
+  Minus,
   Users,
-  BookOpen,
   ChevronDown,
   ChevronUp,
   Clock,
   AlertCircle,
-  Scale,
+  GitMerge,
   Brain,
   Filter,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
 
-type Rating = "GREEN" | "AMBER" | "RED" | "DISAGREE";
+type Routing = "CONSENSUS" | "MAJORITY" | "SPLIT";
+type ModelRating = "GREEN" | "AMBER" | "RED";
+type ActiveFilter = Routing | "ALL";
 
-const RATING_CONFIG: Record<Rating, { label: string; sublabel: string; icon: typeof CheckCircle2; bg: string; badge: string; border: string; text: string }> = {
-  GREEN: {
-    label: "Cleared",
-    sublabel: "minimal review",
+// ── Layer 1: Routing badges ─────────────────────────────────────────────────
+// Based purely on model AGREEMENT, not on which rating was given.
+const ROUTING_CONFIG: Record<Routing, {
+  label: string;
+  sublabel: string;
+  icon: typeof CheckCircle2;
+  badgeBg: string;
+  badgeText: string;
+  cardBg: string;
+  cardBorder: string;
+  ringColor: string;
+}> = {
+  CONSENSUS: {
+    label: "Consensus",
+    sublabel: "all 3 models agree",
     icon: CheckCircle2,
-    bg: "bg-green-50",
-    badge: "bg-green-100 text-green-700",
-    border: "border-green-200",
-    text: "text-green-700",
+    badgeBg: "#1B2A4A",
+    badgeText: "#ffffff",
+    cardBg: "bg-slate-50",
+    cardBorder: "border-slate-200",
+    ringColor: "#1B2A4A",
   },
-  AMBER: {
-    label: "Review",
-    sublabel: "targeted review needed",
+  MAJORITY: {
+    label: "Majority",
+    sublabel: "2 of 3 models agree",
+    icon: GitMerge,
+    badgeBg: "#FFC72C",
+    badgeText: "#1B2A4A",
+    cardBg: "bg-amber-50",
+    cardBorder: "border-amber-200",
+    ringColor: "#FFC72C",
+  },
+  SPLIT: {
+    label: "Split",
+    sublabel: "no consensus — priority review",
     icon: AlertTriangle,
-    bg: "bg-amber-50",
-    badge: "bg-amber-100 text-amber-700",
-    border: "border-amber-200",
-    text: "text-amber-700",
-  },
-  RED: {
-    label: "Escalate",
-    sublabel: "senior/partner review",
-    icon: XCircle,
-    bg: "bg-red-50",
-    badge: "bg-red-100 text-red-700",
-    border: "border-red-200",
-    text: "text-red-700",
-  },
-  DISAGREE: {
-    label: "Priority",
-    sublabel: "models split — highest priority",
-    icon: Scale,
-    bg: "bg-purple-50",
-    badge: "bg-purple-100 text-purple-700",
-    border: "border-purple-200",
-    text: "text-purple-700",
+    badgeBg: "#E8614D",
+    badgeText: "#ffffff",
+    cardBg: "bg-red-50",
+    cardBorder: "border-red-100",
+    ringColor: "#E8614D",
   },
 };
 
-const ANALYST_COLORS: Record<string, { dot: string; badge: string }> = {
-  "Model A: GPT-5.2":            { dot: "bg-blue-400",   badge: "bg-blue-50 text-blue-700 border-blue-200"   },
-  "Model B: claude-sonnet-4-6":  { dot: "bg-orange-400", badge: "bg-orange-50 text-orange-700 border-orange-200" },
-  "Model C: gemini-2.5-pro":     { dot: "bg-green-400",  badge: "bg-green-50 text-green-700 border-green-200"  },
+// ── Layer 2: Individual model risk badges ───────────────────────────────────
+// Only appear in the expanded detail view. Green/Amber/Red = risk opinion.
+const MODEL_RATING_CONFIG: Record<ModelRating, { label: string; badge: string }> = {
+  GREEN: { label: "Green",  badge: "bg-green-100 text-green-800" },
+  AMBER: { label: "Amber",  badge: "bg-amber-100 text-amber-800" },
+  RED:   { label: "Red",    badge: "bg-red-100 text-red-800" },
 };
 
-function RatingBadge({ rating }: { rating: Rating }) {
-  const config = RATING_CONFIG[rating];
-  const Icon = config.icon;
+const ANALYST_COLORS: Record<string, { dot: string }> = {
+  "Model A: GPT-5.2":           { dot: "bg-blue-400"   },
+  "Model B: claude-sonnet-4-6": { dot: "bg-orange-400" },
+  "Model C: gemini-2.5-pro":    { dot: "bg-green-400"  },
+};
+
+function RoutingBadge({ routing }: { routing: Routing }) {
+  const cfg = ROUTING_CONFIG[routing];
+  const Icon = cfg.icon;
   return (
     <span
-      className={cn(
-        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold",
-        config.badge
-      )}
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold shrink-0"
+      style={{ backgroundColor: cfg.badgeBg, color: cfg.badgeText }}
     >
       <Icon className="w-3 h-3" />
-      {config.label}
+      {cfg.label}
+    </span>
+  );
+}
+
+function ModelRatingBadge({ rating }: { rating: string }) {
+  const cfg = MODEL_RATING_CONFIG[rating as ModelRating] ?? { label: rating, badge: "bg-slate-100 text-slate-700" };
+  return (
+    <span className={cn("px-2 py-0.5 rounded text-xs font-semibold", cfg.badge)}>
+      {cfg.label}
     </span>
   );
 }
@@ -95,48 +116,47 @@ function ConfidenceBar({ value }: { value: number }) {
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="text-xs text-slate-400 w-4">{value}</span>
+      <span className="text-xs text-slate-400 w-5 text-right">{value}/10</span>
     </div>
   );
 }
 
 function ReviewItemCard({ item }: { item: any }) {
   const [expanded, setExpanded] = useState(false);
-  const cfg = RATING_CONFIG[item.consensusRating as Rating] ?? RATING_CONFIG.AMBER;
+  const routing = item.routing as Routing;
+  const cfg = ROUTING_CONFIG[routing] ?? ROUTING_CONFIG.CONSENSUS;
 
   return (
-    <div className={cn("rounded-xl border p-5 transition-all", cfg.bg, cfg.border)}>
-      <div className="flex items-start gap-3">
-        <div className="pt-0.5 shrink-0">
-          <span className="text-xs text-slate-400 font-mono block text-center w-6">
-            #{item.checklistId}
-          </span>
-        </div>
+    <div className={cn("rounded-xl border transition-all", cfg.cardBg, cfg.cardBorder)}>
+      <div className="flex items-start gap-3 p-4">
+        <span className="text-xs font-mono text-slate-400 pt-0.5 w-5 shrink-0 text-center">
+          #{item.checklistId}
+        </span>
+
         <div className="flex-1 min-w-0">
-          <div className="flex items-start gap-2 flex-wrap">
-            <RatingBadge rating={item.consensusRating as Rating} />
-            <p className="text-sm font-semibold text-slate-800 flex-1">{item.question}</p>
+          <div className="flex items-start gap-2 flex-wrap mb-1.5">
+            <RoutingBadge routing={routing} />
+            <p className="text-sm font-semibold text-slate-800 leading-snug flex-1">
+              {item.question}
+            </p>
           </div>
 
-          {item.disagreementInsight && (
-            <div className="mt-2 flex items-start gap-2 p-2 rounded-lg bg-purple-100 border border-purple-200">
-              <Scale className="w-3.5 h-3.5 text-purple-500 shrink-0 mt-0.5" />
-              <p className="text-xs text-purple-700">{item.disagreementInsight}</p>
-            </div>
-          )}
+          <p className="text-xs text-slate-500 leading-snug mb-2">
+            {item.agreementSummary}
+          </p>
 
-          <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-slate-500">
-            <div className="flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate font-medium text-slate-700">{item.routeTo}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 shrink-0" />
-              <span>{item.estimatedMinutes} min review</span>
-            </div>
-            <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-center gap-4 text-xs text-slate-400 flex-wrap">
+            <span className="flex items-center gap-1">
+              <Users className="w-3 h-3 shrink-0" />
+              <span className="font-medium text-slate-600">{item.routeTo}</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <Clock className="w-3 h-3 shrink-0" />
+              {item.estimatedMinutes} min
+            </span>
+            <div className="flex gap-1 flex-wrap">
               {item.relevantDocuments.slice(0, 4).map((d: string) => (
-                <span key={d} className="px-1.5 py-0.5 rounded font-mono bg-white border border-slate-200">
+                <span key={d} className="px-1.5 py-0.5 rounded font-mono bg-white border border-slate-200 text-slate-500">
                   {d}
                 </span>
               ))}
@@ -146,44 +166,42 @@ function ReviewItemCard({ item }: { item: any }) {
             </div>
           </div>
         </div>
+
         <button
-          onClick={() => setExpanded((e) => !e)}
-          className="shrink-0 p-1 rounded hover:bg-white/50"
+          onClick={() => setExpanded(e => !e)}
+          className="shrink-0 p-1 rounded hover:bg-white/60 transition-colors"
+          aria-label={expanded ? "Collapse" : "Expand model assessments"}
         >
-          {expanded ? (
-            <ChevronUp className="w-4 h-4 text-slate-400" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-slate-400" />
-          )}
+          {expanded
+            ? <ChevronUp className="w-4 h-4 text-slate-400" />
+            : <ChevronDown className="w-4 h-4 text-slate-400" />}
         </button>
       </div>
 
       {expanded && (
-        <div className="mt-4 pl-9 space-y-3">
-          <div className="p-3 rounded-lg bg-white/70 border border-slate-200">
-            <p className="text-xs font-semibold text-slate-600 mb-1">Focus On:</p>
-            <p className="text-xs text-slate-700">{item.focusOn}</p>
+        <div className="border-t border-slate-200 px-4 pb-4 pt-3 space-y-3">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Focus On</p>
+          <div className="p-3 rounded-lg bg-white border border-slate-200 text-xs text-slate-700 leading-relaxed">
+            {item.focusOn}
           </div>
 
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-2">
+            Individual Model Assessments — Risk Opinion
+          </p>
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-slate-600">Analyst Findings:</p>
-            {item.findings.map((finding: any) => {
-              const analystCfg = ANALYST_COLORS[finding.analyst] ?? { dot: "bg-slate-400", badge: "bg-slate-50 text-slate-700 border-slate-200" };
-              const findingCfg = RATING_CONFIG[finding.rating as Rating] ?? RATING_CONFIG.AMBER;
+            {item.findings.map((f: any) => {
+              const analystCfg = ANALYST_COLORS[f.analyst] ?? { dot: "bg-slate-400" };
               return (
-                <div
-                  key={finding.analyst}
-                  className="rounded-lg border bg-white p-3"
-                >
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <div className={cn("w-2 h-2 rounded-full", analystCfg.dot)} />
-                    <span className="text-xs font-semibold text-slate-700">{finding.analyst}</span>
-                    <RatingBadge rating={finding.rating as Rating} />
+                <div key={f.analyst} className="rounded-lg bg-white border border-slate-200 p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={cn("w-2 h-2 rounded-full shrink-0", analystCfg.dot)} />
+                    <span className="text-xs font-semibold text-slate-700">{f.analyst}</span>
+                    <ModelRatingBadge rating={f.rating} />
                     <div className="flex-1">
-                      <ConfidenceBar value={finding.confidence} />
+                      <ConfidenceBar value={f.confidence} />
                     </div>
                   </div>
-                  <p className="text-xs text-slate-600 leading-relaxed">{finding.summary}</p>
+                  <p className="text-xs text-slate-600 leading-relaxed">{f.summary}</p>
                 </div>
               );
             })}
@@ -196,8 +214,8 @@ function ReviewItemCard({ item }: { item: any }) {
 
 export default function ReportPage() {
   const { data: cachedData, isLoading } = useGetCachedReport();
-  const [activeFilter, setActiveFilter] = useState<Rating | "ALL">("ALL");
-  const [activeTab, setActiveTab] = useState<"priority" | "all" | "gaps">("priority");
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter>("ALL");
+  const [activeTab, setActiveTab] = useState<"split" | "all" | "gaps">("split");
 
   const report = cachedData?.report;
 
@@ -226,20 +244,21 @@ export default function ReportPage() {
     );
   }
 
-  const summary = report.executiveSummary;
-  const allItems = report.allItems ?? [];
-  const priorityItems = report.priorityItems ?? [];
-  const gaps = report.informationGaps ?? [];
+  const summary    = report.executiveSummary;
+  const allItems   = report.allItems ?? [];
+  const splitItems = report.priorityItems ?? [];
+  const gaps       = report.informationGaps ?? [];
 
   const filteredAll = activeFilter === "ALL"
     ? allItems
-    : allItems.filter(i => i.consensusRating === activeFilter);
+    : allItems.filter((i: any) => i.routing === activeFilter);
 
   const totalTime = allItems.reduce((s: number, i: any) => s + (i.estimatedMinutes ?? 0), 0);
 
   return (
     <div className="p-8">
       <div className="max-w-6xl mx-auto">
+
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-2">
             <FileBarChart2 className="w-5 h-5 text-slate-400" />
@@ -251,72 +270,70 @@ export default function ReportPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          {(["GREEN", "AMBER", "RED", "DISAGREE"] as Rating[]).map((r) => {
-            const cfg = RATING_CONFIG[r];
-            const count = r === "GREEN" ? summary.greenCount : r === "AMBER" ? summary.amberCount : r === "RED" ? summary.redCount : summary.disagreeCount;
+        {/* ── Routing summary tiles ────────────────────────────── */}
+        <div className="mb-2">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+            Routing Summary — based on model agreement
+          </p>
+        </div>
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          {(["CONSENSUS", "MAJORITY", "SPLIT"] as Routing[]).map((r) => {
+            const cfg = ROUTING_CONFIG[r];
             const Icon = cfg.icon;
+            const count = r === "CONSENSUS" ? summary.consensusCount
+                        : r === "MAJORITY"  ? summary.majorityCount
+                        : summary.splitCount;
+            const isActive = activeFilter === r;
             return (
               <button
                 key={r}
-                onClick={() => {
-                  setActiveFilter(r);
-                  setActiveTab("all");
-                }}
+                onClick={() => { setActiveFilter(isActive ? "ALL" : r); setActiveTab("all"); }}
                 className={cn(
-                  "rounded-xl border p-4 text-center transition-all hover:shadow-md",
-                  cfg.bg, cfg.border,
-                  activeFilter === r && "ring-2 ring-offset-1",
-                  {
-                    "ring-green-400": activeFilter === "GREEN" && r === "GREEN",
-                    "ring-amber-400": activeFilter === "AMBER" && r === "AMBER",
-                    "ring-red-400": activeFilter === "RED" && r === "RED",
-                    "ring-purple-400": activeFilter === "DISAGREE" && r === "DISAGREE",
-                  }
+                  "rounded-xl border-2 p-5 text-center transition-all hover:shadow-md",
+                  cfg.cardBg,
+                  isActive ? "shadow-md" : "border-transparent"
                 )}
+                style={{ borderColor: isActive ? cfg.ringColor : "transparent" }}
               >
-                <Icon className={cn("w-5 h-5 mx-auto mb-1", cfg.text)} />
-                <p className={cn("text-3xl font-bold", cfg.text)}>{count}</p>
-                <p className={cn("text-xs font-bold mt-0.5", cfg.text)}>{cfg.label}</p>
-                <p className={cn("text-xs opacity-70 mt-0.5", cfg.text)}>{cfg.sublabel}</p>
+                <Icon className="w-5 h-5 mx-auto mb-2" style={{ color: cfg.badgeBg }} />
+                <p className="text-3xl font-bold" style={{ color: cfg.badgeBg }}>{count}</p>
+                <p className="text-sm font-bold mt-0.5" style={{ color: cfg.badgeBg }}>{cfg.label}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{cfg.sublabel}</p>
               </button>
             );
           })}
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-5 mb-6 shadow-sm">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-3">
-              <div className={cn("px-3 py-1.5 rounded-lg text-sm font-bold", {
-                "bg-green-100 text-green-800": summary.overallRisk === "LOW",
-                "bg-amber-100 text-amber-800": summary.overallRisk === "MODERATE",
-                "bg-red-100 text-red-800": summary.overallRisk === "ELEVATED",
-              })}>
-                {summary.overallRisk} RISK
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-slate-800">Overall Assessment</p>
-                <p className="text-xs text-slate-500">
-                  {summary.redCount} Escalate · {summary.disagreeCount} Priority · {summary.amberCount} Review · {summary.greenCount} Cleared
-                </p>
-              </div>
+        {/* ── Overall assessment bar ───────────────────────────── */}
+        <div className="rounded-xl border border-slate-200 bg-white p-4 mb-6 shadow-sm flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <div className={cn("px-3 py-1.5 rounded-lg text-sm font-bold", {
+              "bg-slate-100 text-slate-700": summary.overallRisk === "LOW",
+              "bg-amber-100 text-amber-800": summary.overallRisk === "MODERATE",
+              "bg-red-100 text-red-800":     summary.overallRisk === "ELEVATED",
+            })}>
+              {summary.overallRisk} AGREEMENT
             </div>
-            <div className="flex items-center gap-2 text-sm text-slate-500">
-              <Clock className="w-4 h-4" />
-              <span>Est. total review time: <strong className="text-slate-700">{Math.round(totalTime / 60)} hours</strong></span>
-            </div>
+            <p className="text-xs text-slate-500">
+              {summary.splitCount} Split · {summary.majorityCount} Majority · {summary.consensusCount} Consensus
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <Clock className="w-4 h-4" />
+            <span>Est. total review time: <strong className="text-slate-700">{Math.round(totalTime / 60)} hours</strong></span>
           </div>
         </div>
 
+        {/* ── Tabs ─────────────────────────────────────────────── */}
         <div className="flex gap-2 mb-6 border-b border-slate-200">
           {[
-            { key: "priority", label: `Priority Items (${priorityItems.length})` },
-            { key: "all", label: `All 42 Items` },
-            { key: "gaps", label: `Information Gaps (${gaps.length})` },
+            { key: "split", label: `Split Items (${splitItems.length})` },
+            { key: "all",   label: "All 42 Items" },
+            { key: "gaps",  label: `Information Gaps (${gaps.length})` },
           ].map((tab) => (
             <button
               key={tab.key}
-              onClick={() => { setActiveTab(tab.key as any); if (tab.key === "all") setActiveFilter("ALL"); }}
+              onClick={() => { setActiveTab(tab.key as any); if (tab.key !== "all") setActiveFilter("ALL"); }}
               className={cn(
                 "px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors",
                 activeTab === tab.key
@@ -329,49 +346,55 @@ export default function ReportPage() {
           ))}
         </div>
 
-        {activeTab === "priority" && (
+        {/* ── Split tab ─────────────────────────────────────────── */}
+        {activeTab === "split" && (
           <div>
             <p className="text-sm text-slate-500 mb-4">
-              Items routed to <strong>Escalate</strong> or <strong>Priority</strong> — sorted by urgency for human review
+              Items where the three models <strong>could not reach agreement</strong> — human review and final call required.
+              Sorted by priority score.
             </p>
             <div className="space-y-3">
-              {priorityItems.map((item: any) => (
+              {splitItems.map((item: any) => (
                 <ReviewItemCard key={item.checklistId} item={item} />
               ))}
-              {priorityItems.length === 0 && (
+              {splitItems.length === 0 && (
                 <div className="text-center py-12 text-slate-400">
                   <CheckCircle2 className="w-10 h-10 mx-auto mb-3 text-green-400" />
-                  <p>No Escalate or Priority items — strong consensus across all models!</p>
+                  <p>No Split items — all models reached agreement on every checklist item.</p>
                 </div>
               )}
             </div>
           </div>
         )}
 
+        {/* ── All items tab ─────────────────────────────────────── */}
         {activeTab === "all" && (
           <div>
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
               <Filter className="w-4 h-4 text-slate-400" />
-              <div className="flex gap-2">
-                {(["ALL", "RED", "DISAGREE", "AMBER", "GREEN"] as const).map((f) => {
-                  const routeLabel: Record<string, string> = {
-                    ALL: "All", RED: "Escalate", DISAGREE: "Priority", AMBER: "Review", GREEN: "Cleared",
+              <div className="flex gap-2 flex-wrap">
+                {(["ALL", "SPLIT", "MAJORITY", "CONSENSUS"] as const).map((f) => {
+                  const labels: Record<string, string> = {
+                    ALL: "All", SPLIT: "Split", MAJORITY: "Majority", CONSENSUS: "Consensus",
                   };
+                  const isActive = activeFilter === f;
+                  const cfg = f !== "ALL" ? ROUTING_CONFIG[f as Routing] : null;
                   return (
-                  <button
-                    key={f}
-                    onClick={() => setActiveFilter(f)}
-                    className={cn(
-                      "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
-                      activeFilter === f
-                        ? f === "ALL"
-                          ? "bg-slate-800 text-white"
-                          : (RATING_CONFIG[f as Rating]?.badge ?? "bg-slate-100 text-slate-700")
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    )}
-                  >
-                    {routeLabel[f]}
-                  </button>
+                    <button
+                      key={f}
+                      onClick={() => setActiveFilter(f)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
+                        isActive
+                          ? f === "ALL"
+                            ? "bg-slate-800 text-white"
+                            : "text-white"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      )}
+                      style={isActive && cfg ? { backgroundColor: cfg.badgeBg, color: cfg.badgeText } : undefined}
+                    >
+                      {labels[f]}
+                    </button>
                   );
                 })}
               </div>
@@ -385,10 +408,11 @@ export default function ReportPage() {
           </div>
         )}
 
+        {/* ── Information gaps tab ─────────────────────────────── */}
         {activeTab === "gaps" && (
           <div>
             <p className="text-sm text-slate-500 mb-4">
-              Key information gaps that require follow-up before closing
+              Key information gaps that require follow-up before closing.
             </p>
             <div className="space-y-3">
               {gaps.map((gap: any, i: number) => (
@@ -408,13 +432,15 @@ export default function ReportPage() {
           </div>
         )}
 
-        <div className="mt-8 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-500">
+        <div className="mt-8 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-500 leading-relaxed">
           <p>
-            <strong className="text-slate-700">Disclaimer:</strong> This report is generated by AI models and is intended as a first-pass triage tool only.
-            All findings must be independently verified by qualified professionals (attorneys, CPAs, restaurant industry specialists, and M&A advisors)
-            before any investment decision is made. The target company (Olive & Thyme LLC) is entirely fictional and created for demonstration purposes.
+            <strong className="text-slate-700">Disclaimer:</strong> This report is generated by AI models and is intended as a first-pass
+            triage tool only. The routing categories (Consensus / Majority / Split) reflect the degree of model agreement —
+            they do not constitute professional risk opinions. All findings must be independently verified by qualified professionals
+            before any investment decision is made. Olive & Thyme LLC is entirely fictional and created for demonstration purposes.
           </p>
         </div>
+
       </div>
     </div>
   );

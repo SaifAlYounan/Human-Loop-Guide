@@ -5,6 +5,8 @@ import { documents } from "../data/documents.js";
 import { checklist } from "../data/checklist.js";
 import { models, SYSTEM_PROMPT, buildDocumentContext, buildUserPrompt } from "./promptTemplates.js";
 
+export type Routing = "CONSENSUS" | "MAJORITY" | "SPLIT";
+
 export interface ModelFinding {
   analyst: string;
   rating: "GREEN" | "AMBER" | "RED";
@@ -16,8 +18,8 @@ export interface ReviewItem {
   checklistId: number;
   question: string;
   findings: ModelFinding[];
-  consensusRating: "GREEN" | "AMBER" | "RED" | "DISAGREE";
-  disagreementInsight?: string;
+  routing: Routing;
+  agreementSummary: string;
   routeTo: string;
   focusOn: string;
   estimatedMinutes: number;
@@ -31,10 +33,9 @@ export interface InformationGap {
 }
 
 export interface ExecutiveSummary {
-  greenCount: number;
-  amberCount: number;
-  redCount: number;
-  disagreeCount: number;
+  consensusCount: number;
+  majorityCount: number;
+  splitCount: number;
   overallRisk: "LOW" | "MODERATE" | "ELEVATED";
 }
 
@@ -152,47 +153,50 @@ function parseFindings(rawContent: string, modelLabel: string): RawFinding[] {
   }
 }
 
-// Majority-vote consensus: 3 identical → consensus; 2 same + 1 different → majority wins (RED elevated)
-function determineConsensus(findings: ModelFinding[]): {
-  consensusRating: "GREEN" | "AMBER" | "RED" | "DISAGREE";
-  disagreementInsight?: string;
-} {
+function ratingLabel(r: string): string {
+  if (r === "GREEN") return "Green";
+  if (r === "RED")   return "Red";
+  return "Amber";
+}
+
+// Routing is purely about model AGREEMENT, not about which rating was given.
+function determineRouting(findings: ModelFinding[]): { routing: Routing; agreementSummary: string } {
   const ratings = findings.map(f => f.rating);
   const counts: Record<string, number> = {};
   for (const r of ratings) counts[r] = (counts[r] ?? 0) + 1;
 
-  // All three agree
-  if (counts["GREEN"] === 3) return { consensusRating: "GREEN" };
-  if (counts["AMBER"] === 3) return { consensusRating: "AMBER" };
-  if (counts["RED"] === 3)   return { consensusRating: "RED" };
-
-  // Two agree (majority) — RED is elevated: if any 2 say RED → RED even if one says AMBER
-  if ((counts["RED"] ?? 0) >= 2)   return { consensusRating: "RED" };
-  if ((counts["GREEN"] ?? 0) >= 2) return { consensusRating: "GREEN" };
-  if ((counts["AMBER"] ?? 0) >= 2) return { consensusRating: "AMBER" };
-
-  // Three-way split or RED vs GREEN (no clear majority)
-  const hasRed   = (counts["RED"] ?? 0) > 0;
-  const hasGreen = (counts["GREEN"] ?? 0) > 0;
-  const redModels   = findings.filter(f => f.rating === "RED").map(f => f.analyst).join(", ");
-  const greenModels = findings.filter(f => f.rating === "GREEN").map(f => f.analyst).join(", ");
-  const amberModels = findings.filter(f => f.rating === "AMBER").map(f => f.analyst).join(", ");
-
-  let insight = "Models disagree: ";
-  if (hasRed && hasGreen) {
-    insight += `${redModels} rated RED; ${greenModels} rated GREEN. Human adjudication required.`;
-  } else if (hasRed) {
-    insight += `${redModels} rated RED; ${amberModels} rated AMBER. Elevate to senior review.`;
-  } else {
-    insight += `${greenModels} rated GREEN; ${amberModels} rated AMBER. May need additional clarification.`;
+  // All 3 agree
+  if (Object.keys(counts).length === 1) {
+    return {
+      routing: "CONSENSUS",
+      agreementSummary: `All 3 models agree: rated ${ratingLabel(ratings[0])}`,
+    };
   }
 
-  return { consensusRating: "DISAGREE", disagreementInsight: insight };
+  // 2 of 3 agree (majority)
+  const majorityEntry = Object.entries(counts).find(([, c]) => c >= 2);
+  if (majorityEntry) {
+    const [majorRating] = majorityEntry;
+    const dissentEntry  = Object.entries(counts).find(([r]) => r !== majorRating);
+    const [dissentRating] = dissentEntry ?? ["AMBER"];
+    const dissentModel = findings.find(f => f.rating === dissentRating)?.analyst ?? "one model";
+    return {
+      routing: "MAJORITY",
+      agreementSummary: `2 of 3 models rated ${ratingLabel(majorRating)} · ${dissentModel} dissented with ${ratingLabel(dissentRating)} — check dissenting reasoning`,
+    };
+  }
+
+  // All three different — 3-way split
+  const parts = findings.map(f => `${f.analyst}: ${ratingLabel(f.rating)}`).join(" · ");
+  return {
+    routing: "SPLIT",
+    agreementSummary: `No consensus — ${parts}`,
+  };
 }
 
 function computePriority(item: ReviewItem): number {
-  const ratingScore: Record<string, number> = { RED: 3, DISAGREE: 2.5, AMBER: 1, GREEN: 0 };
-  const base = ratingScore[item.consensusRating] ?? 0;
+  const routingScore: Record<Routing, number> = { SPLIT: 3, MAJORITY: 2, CONSENSUS: 1 };
+  const base = routingScore[item.routing] ?? 0;
   const avgConfidence = item.findings.reduce((a, b) => a + b.confidence, 0) / item.findings.length;
   return Math.round(base * 10 + (10 - avgConfidence));
 }
@@ -298,8 +302,8 @@ export async function runFullAnalysis(): Promise<SteeringReport> {
       },
     ];
 
-    const { consensusRating, disagreementInsight } = determineConsensus(findings);
-    const routing = REVIEWER_ROUTING[id] ?? {
+    const { routing, agreementSummary } = determineRouting(findings);
+    const reviewerRouting = REVIEWER_ROUTING[id] ?? {
       routeTo: "Senior Deal Partner",
       focusOn: "Review relevant documents",
       estimatedMinutes: 30,
@@ -310,11 +314,11 @@ export async function runFullAnalysis(): Promise<SteeringReport> {
       checklistId: id,
       question: checklistItem.question,
       findings,
-      consensusRating,
-      disagreementInsight,
-      routeTo: routing.routeTo,
-      focusOn: routing.focusOn,
-      estimatedMinutes: routing.estimatedMinutes,
+      routing,
+      agreementSummary,
+      routeTo: reviewerRouting.routeTo,
+      focusOn: reviewerRouting.focusOn,
+      estimatedMinutes: reviewerRouting.estimatedMinutes,
       relevantDocuments: itemMeta.relevantDocuments,
       priority: 0,
     };
@@ -324,17 +328,16 @@ export async function runFullAnalysis(): Promise<SteeringReport> {
 
   reviewItems.sort((a, b) => b.priority - a.priority);
 
-  const priorityItems  = reviewItems.filter(i => i.consensusRating === "RED" || i.consensusRating === "DISAGREE");
-  const consensusItems = reviewItems.filter(i => i.consensusRating === "GREEN" || i.consensusRating === "AMBER");
+  const priorityItems  = reviewItems.filter(i => i.routing === "SPLIT");
+  const consensusItems = reviewItems.filter(i => i.routing !== "SPLIT");
 
-  const greenCount    = reviewItems.filter(i => i.consensusRating === "GREEN").length;
-  const amberCount    = reviewItems.filter(i => i.consensusRating === "AMBER").length;
-  const redCount      = reviewItems.filter(i => i.consensusRating === "RED").length;
-  const disagreeCount = reviewItems.filter(i => i.consensusRating === "DISAGREE").length;
+  const consensusCount = reviewItems.filter(i => i.routing === "CONSENSUS").length;
+  const majorityCount  = reviewItems.filter(i => i.routing === "MAJORITY").length;
+  const splitCount     = reviewItems.filter(i => i.routing === "SPLIT").length;
 
   let overallRisk: "LOW" | "MODERATE" | "ELEVATED" = "LOW";
-  if (redCount + disagreeCount >= 5 || redCount >= 3) overallRisk = "ELEVATED";
-  else if (redCount + disagreeCount >= 2 || amberCount >= 8) overallRisk = "MODERATE";
+  if (splitCount >= 5) overallRisk = "ELEVATED";
+  else if (splitCount >= 2 || majorityCount >= 10) overallRisk = "MODERATE";
 
   const informationGaps: InformationGap[] = [
     {
@@ -361,7 +364,7 @@ export async function runFullAnalysis(): Promise<SteeringReport> {
 
   return {
     generatedAt: new Date().toISOString(),
-    executiveSummary: { greenCount, amberCount, redCount, disagreeCount, overallRisk },
+    executiveSummary: { consensusCount, majorityCount, splitCount, overallRisk },
     priorityItems,
     consensusItems,
     informationGaps,
