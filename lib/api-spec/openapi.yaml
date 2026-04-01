@@ -1,22 +1,26 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Human-in-the-Loop Guidance System API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: documents
+    description: Data room documents
+  - name: checklist
+    description: Due diligence checklist
+  - name: analysis
+    description: AI analysis and steering report
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +28,94 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /documents:
+    get:
+      operationId: listDocuments
+      tags: [documents]
+      summary: List all documents in data room
+      responses:
+        "200":
+          description: List of documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DocumentSummary"
+
+  /documents/{id}:
+    get:
+      operationId: getDocument
+      tags: [documents]
+      summary: Get a specific document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Document detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /checklist:
+    get:
+      operationId: getChecklist
+      tags: [checklist]
+      summary: Get full 42-item due diligence checklist
+      responses:
+        "200":
+          description: Checklist
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChecklistDimension"
+
+  /analysis/run:
+    post:
+      operationId: runAnalysis
+      tags: [analysis]
+      summary: Run multi-model analysis and get steering report
+      responses:
+        "200":
+          description: Steering report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SteeringReport"
+        "500":
+          description: Analysis failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /analysis/cached:
+    get:
+      operationId: getCachedReport
+      tags: [analysis]
+      summary: Get the most recently cached steering report
+      responses:
+        "200":
+          description: Cached report or null
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CachedReportResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +126,209 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    DocumentSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        category:
+          type: string
+        categoryCode:
+          type: string
+      required:
+        - id
+        - title
+        - category
+        - categoryCode
+
+    Document:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        category:
+          type: string
+        categoryCode:
+          type: string
+        content:
+          type: string
+      required:
+        - id
+        - title
+        - category
+        - categoryCode
+        - content
+
+    ChecklistItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        question:
+          type: string
+        relevantDocuments:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - question
+        - relevantDocuments
+
+    ChecklistDimension:
+      type: object
+      properties:
+        dimension:
+          type: string
+        code:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChecklistItem"
+      required:
+        - dimension
+        - code
+        - items
+
+    ModelFinding:
+      type: object
+      properties:
+        analyst:
+          type: string
+        rating:
+          type: string
+          enum: [GREEN, AMBER, RED]
+        summary:
+          type: string
+        confidence:
+          type: integer
+      required:
+        - analyst
+        - rating
+        - summary
+        - confidence
+
+    ReviewItem:
+      type: object
+      properties:
+        checklistId:
+          type: integer
+        question:
+          type: string
+        findings:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModelFinding"
+        consensusRating:
+          type: string
+          enum: [GREEN, AMBER, RED, DISAGREE]
+        disagreementInsight:
+          type: string
+        routeTo:
+          type: string
+        focusOn:
+          type: string
+        estimatedMinutes:
+          type: integer
+        relevantDocuments:
+          type: array
+          items:
+            type: string
+        priority:
+          type: integer
+      required:
+        - checklistId
+        - question
+        - findings
+        - consensusRating
+        - routeTo
+        - focusOn
+        - estimatedMinutes
+        - relevantDocuments
+        - priority
+
+    InformationGap:
+      type: object
+      properties:
+        description:
+          type: string
+        impact:
+          type: string
+      required:
+        - description
+        - impact
+
+    ExecutiveSummary:
+      type: object
+      properties:
+        greenCount:
+          type: integer
+        amberCount:
+          type: integer
+        redCount:
+          type: integer
+        disagreeCount:
+          type: integer
+        overallRisk:
+          type: string
+          enum: [LOW, MODERATE, ELEVATED]
+      required:
+        - greenCount
+        - amberCount
+        - redCount
+        - disagreeCount
+        - overallRisk
+
+    SteeringReport:
+      type: object
+      properties:
+        generatedAt:
+          type: string
+        executiveSummary:
+          $ref: "#/components/schemas/ExecutiveSummary"
+        priorityItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReviewItem"
+        consensusItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReviewItem"
+        informationGaps:
+          type: array
+          items:
+            $ref: "#/components/schemas/InformationGap"
+        allItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReviewItem"
+      required:
+        - generatedAt
+        - executiveSummary
+        - priorityItems
+        - consensusItems
+        - informationGaps
+        - allItems
+
+    CachedReportResponse:
+      type: object
+      properties:
+        report:
+          $ref: "#/components/schemas/SteeringReport"
+        hasCache:
+          type: boolean
+      required:
+        - hasCache

@@ -1,0 +1,1029 @@
+Build a web application called **"Human-in-the-Loop Guidance System"** — a working demo of multi-model AI review triage for M&A due diligence.
+
+---
+
+## WHAT THIS APP DOES
+
+The app does NOT do the due diligence. It tells humans **where to focus** and **at what seniority level.** Three AI models independently assess a data room against a due diligence checklist. Where they agree, minimal human review is needed. Where they disagree, that disagreement tells you exactly where human expertise adds value. The output is a **Steering Report** — a prioritized guide that routes each review item to the right person.
+
+---
+
+## TECH STACK
+
+- React frontend, Express/Node backend
+- Use three different AI models available on Replit (e.g., GPT-4o-mini, Claude Haiku/Sonnet, Gemini Flash — use whatever 3 different models Replit provides). If only one model is available, run it 3 times with different system prompts and temperatures (0.3, 0.7, 1.0) to simulate model diversity.
+- Clean professional design — dark navy sidebar (#1a3a5c), white/light gray content area
+- **CRITICAL: All document content must be stored as static JSON data files in the project source (e.g., `/data/documents.json` or `/data/documents/` folder with individual JSON files). Do NOT generate documents at runtime. They must be part of the committed source code so they persist after deployment/publish. Every document's full text content must be in these static files.**
+
+---
+
+## APP FLOW — SIMPLE, CEO-FRIENDLY
+
+### Landing Page (the first thing anyone sees)
+
+```
+HUMAN-IN-THE-LOOP GUIDANCE SYSTEM
+Multi-Model AI Review Triage
+
+[Subtitle]
+"Three AI models read every document. 
+Where they disagree is where your team should focus."
+
+[Three large buttons in a row]
+
+📁 EXPLORE DATA ROOM              📋 VIEW CHECKLISTS               🔍 RUN REVIEW ANALYSIS
+62 documents across 8 categories    42 items across 6 risk            3 models. 42 checks.
+Browse the due diligence materials  dimensions. See what gets checked  One steering report.
+```
+
+Clean, minimal, professional. No clutter.
+
+**Below the three buttons, add an "About This System" section with two columns:**
+
+LEFT COLUMN — "✅ What this system does"
+- Routes each review item to the right human reviewer at the right seniority level
+- Identifies where AI models disagree — marking exactly where human judgment adds value
+- Reduces time spent on items where all models agree there's no issue
+- Makes the review methodology transparent and auditable (every checklist item, every model's reasoning, every document cited)
+- Provides a structured starting point — not a final answer
+- Tells you what's missing from the data room
+
+RIGHT COLUMN — "⚠️ What this system does NOT do"
+- Does not replace human due diligence — it steers it
+- Does not guarantee completeness — AI models can miss things, especially novel or domain-specific risks
+- Does not provide legal, financial, or tax advice
+- Does not make go/no-go recommendations — that's the human's job
+- Cannot verify facts against external sources (e.g., it reads what the lease says but can't confirm with the landlord)
+- May produce false confidence when all models share the same blind spot — different models reduce this risk but do not eliminate it
+- Results are non-deterministic — running the same analysis twice may produce slightly different ratings
+
+**Style:** Clean two-column layout with a light gray background. No marketing language. Straightforward, honest, readable. This section builds trust precisely because it's candid about limitations.
+
+### Data Room Page (click "Explore Data Room")
+
+Left sidebar: folder tree with 8 categories (A–H), expandable to show individual documents. Click any document → right panel shows the full document content with title, category label, and document ID.
+
+This is the "input" — what the AI models will review.
+
+A button in the top-right: "← Back to Home" to return to landing page.
+
+### Checklists Page (click "View Checklists")
+
+Displays the full 42-item due diligence checklist organized by the 6 risk dimensions. Each item shows:
+- Item number and question
+- Which documents from the data room are relevant to this item (clickable links to the data room page)
+- Risk dimension category with color-coded header
+
+This page lets the user understand what the AI models will assess BEFORE running the analysis. It's the methodology — transparent and inspectable.
+
+A button at the top: "← Back to Home" to return to landing page.
+A button at the bottom: "Run Analysis →" to go directly to the analysis page.
+
+### Analysis Page (click "Run Review Analysis")
+
+Shows a brief animated progress sequence:
+```
+Analyst Alpha reviewing Financial Health...  ✓
+Analyst Alpha reviewing Legal & Compliance... ✓
+...
+Analyst Beta reviewing Financial Health...   ✓
+...
+Analyst Gamma reviewing Financial Health...  ✓
+...
+Coordinator synthesizing results...          ✓
+```
+
+When complete, it transitions directly to the **Steering Report** — the hero output.
+
+### Steering Report Page (the money shot)
+
+This is what a partner at a professional services firm would actually use. Make it look like a real deliverable.
+
+**Header:**
+```
+HUMAN-IN-THE-LOOP GUIDANCE SYSTEM
+STEERING REPORT
+
+Target: Olive & Thyme LLC
+Date: [current date]
+Models: 3 independent AI analysts
+Documents Reviewed: 62
+Checklist Items Assessed: 42
+```
+
+**EXECUTIVE SUMMARY box:**
+```
+🟢 XX items — Models agree: No concern → MINIMAL REVIEW (staff sign-off)
+🟡 YY items — Majority agrees: Minor concern → TARGETED REVIEW (senior/manager)
+🔴 ZZ items — Models disagree → FULL HUMAN REVIEW REQUIRED (partner)
+
+Overall Assessment: [LOW / MODERATE / ELEVATED] risk
+```
+
+**PRIORITY REVIEW ITEMS** (sorted by urgency — RED first, then AMBER):
+
+For each non-consensus item, show a card:
+- Checklist question
+- What each model found (brief — 1 line each, with their rating color-coded)
+- **Why they disagreed** (the key insight)
+- **ROUTE TO:** Staff / Senior Associate / Manager / Partner
+- **FOCUS ON:** exactly what the human should look at (specific instruction)
+- **ESTIMATED TIME:** X minutes
+- **RELEVANT DOCUMENTS:** clickable links back to the data room
+
+**CONSENSUS FINDINGS** (collapsed by default, expandable):
+Brief summary of items where all 3 models agreed GREEN — grouped by category. These are the items where minimal review is needed.
+
+**INFORMATION GAPS:**
+Documents or data expected but not found in the data room.
+
+**At the bottom:** "Download Report as PDF" button + "View Full Model Comparison" link (expandable table showing all 42 items × 3 models, for people who want the detail).
+
+---
+
+## THE TARGET COMPANY
+
+**Olive & Thyme** — a Mediterranean restaurant in Austin, TX.
+
+Core facts (use these consistently across ALL 62 documents):
+- **Founded:** March 2022
+- **Entity:** Olive & Thyme LLC, a Texas limited liability company
+- **Owners:** Maria Konstantinou (60%) and James Park (40%)
+- **Location:** 1847 South Congress Avenue, Austin, TX 78704
+- **Employees:** 15 (including owners)
+- **Concept:** Upscale-casual Mediterranean, dinner-focused, strong wine program, weekend brunch
+- **Revenue:** FY2023: $980K → FY2024: $1,105K → FY2025: $1,210K
+- **EBITDA:** FY2023: $88K (9.0%) → FY2024: $110K (10.0%) → FY2025: $133K (11.0%)
+- **Asking price:** $850,000 (seller-proposed, ~6.4x FY2025 EBITDA)
+- **Lease:** 10-year term starting March 2022, $8,500/month with 3% annual escalation, NO renewal option
+- **Head chef:** Dimitri Alexandros, hired September 2022, annual salary $78,000
+- **General manager:** Sarah Chen, hired June 2023, annual salary $62,000
+- **Landlord:** SoCo Properties LLC
+- **Primary food supplier:** Hill Country Provisions (45% of food costs)
+- **Bank:** First Texas Community Bank, operating account + $75K line of credit
+- **POS system:** Toast
+- **Delivery platforms:** UberEats (15% of revenue), DoorDash (8% of revenue)
+- **Accountant/reviewer:** Martinez & Associates CPAs
+- **Legal counsel:** n/a (used LegalZoom for formation)
+
+### YELLOW FLAGS TO EMBED (these create model disagreement)
+
+Plant these realistically across the documents. Don't make them obvious — bury them where a careful reviewer would find them:
+
+1. **Head chef contract expires December 2026 (6 months) with NO non-compete clause.** His contract is a simple offer letter, not a proper employment agreement. If he leaves, he could open a competing restaurant across the street. (Employment docs)
+
+2. **Single supplier concentration.** Hill Country Provisions supplies 45% of all food inputs. The contract is month-to-month with no pricing lock. If they raise prices or stop supplying, the restaurant has no backup for nearly half its ingredients. (Supplier contracts, food cost analysis)
+
+3. **Lease has NO renewal option.** The 10-year lease runs to March 2032 — only 6 years remaining. At $8,500/month with 3% escalation, rent is currently ~$9,850/month. After 2032, the landlord has zero obligation to renew. The entire business depends on a location it might lose. (Lease agreement)
+
+4. **Q3 2024 revenue dip.** Revenue dropped 12% in July-September 2024 compared to Q2 2024. The seller explains it as "seasonal" and "road construction on South Congress." The road construction is real (verifiable in city records), but the dip is sharper than seasonal norms for Austin restaurants. (Monthly POS reports, financial statements)
+
+5. **Resolved slip-and-fall claim.** A customer slipped in the restroom in October 2024, filed a claim, settled for $15,000 in January 2025. Insurance covered it, but the incident report mentions "wet floor, no warning sign posted." This suggests a process gap. (Litigation schedule, insurance records)
+
+6. **Health inspection: one minor violation.** The November 2024 inspection found improper food storage temperatures in the walk-in cooler (measured at 44°F, limit is 41°F). Corrected within 48 hours, re-inspected and passed. But the violation is on record. (Health inspection reports)
+
+7. **Delivery platform dependency growing.** Delivery revenue was 15% of total in 2023, now 23% in 2025. UberEats commission is 30%, DoorDash is 25%. This means ~23% of revenue has a 25-30% commission haircut. Gross margins on delivery orders are significantly lower. This trend isn't highlighted in the seller's materials. (Delivery platform agreements, revenue breakdown, POS reports)
+
+8. **No trademark registration.** The "Olive & Thyme" name has been used since 2022 but was never formally registered with the USPTO. A quick search shows no conflicting marks, but the brand is unprotected. (IP section — notably absent)
+
+9. **James Park (40% owner) is a passive investor.** He has a full-time job elsewhere and doesn't work in the business. All operational decisions are Maria's. If Maria gets a non-compete in the acquisition, the buyer is running the restaurant without either founder. (Operating agreement, shareholder agreement, org chart)
+
+10. **Intercompany: Maria's catering side business.** Maria runs occasional catering gigs through a separate sole proprietorship, using Olive & Thyme's kitchen and staff on Mondays (restaurant is closed). The arrangement is informal — no written agreement, no kitchen rental payment, no allocation of ingredient costs. (This should appear in board minutes as a passing mention, NOT in the financial statements — it's a related party transaction that hasn't been properly disclosed. The intercompany schedule she prepared says "No staff are paid" but the meeting minutes mention "kitchen and staff" — a contradiction the models should catch.)
+
+---
+
+## ALL 62 DOCUMENTS — CONTENT SPECIFICATIONS
+
+Generate realistic, detailed content for each document. Each document should be 300-1000 words depending on type. Financial documents must have actual numbers (consistent with core facts). Legal documents should have realistic legal language. Every document should read like a real document a buyer would find in a data room.
+
+**Store all documents as static data files that persist after deployment.**
+
+### A. Corporate & Foundational (9 documents)
+
+**A-01: Certificate of Formation (Texas)**
+Texas SOS filing. Olive & Thyme LLC, filed March 15, 2022. File number 0804672591. Registered agent: Maria Konstantinou, 1847 South Congress Ave, Austin TX 78704. Organizer: LegalZoom.com, Inc. Purpose: "Any lawful purpose." Management: managed by its members. Duration: perpetual.
+
+**A-02: Company Agreement (Operating Agreement)**
+Standard Texas LLC operating agreement. Maria Konstantinou 60%, James Park 40%. Maria is sole Managing Member with full authority over operations, hiring, spending up to $25,000, and day-to-day decisions. James is a passive "Economic Interest" member — no management authority, no voting rights on operational matters, voting rights only on: sale of company, admission of new members, amendment of agreement. Profits and losses distributed pro-rata (60/40). Capital accounts maintained. Distributions at Managing Member's discretion, minimum quarterly if cash permits. Drag-along and tag-along provisions (standard LegalZoom template). Transfer restrictions: any transfer of membership interest requires unanimous member consent. Right of first refusal to other member at fair market value. Non-compete: none in the operating agreement. Dissolution: unanimous vote or court order.
+
+**A-03: Side Letter between Maria and James**
+Dated April 10, 2022. James Park confirms investment of $120,000 cash for 40% membership interest. Maria Konstantinou invested $80,000 cash plus sweat equity valued at $100,000 (restaurant concept development, recipe development, buildout supervision). Total initial capitalization: $300,000 ($200,000 cash + $100,000 sweat equity). James acknowledges: "I am a passive investor and will not participate in day-to-day operations. All operational decisions are delegated to Maria as Managing Member. I understand this investment carries risk and I may lose my entire investment."
+
+**A-04: City of Austin Business License**
+City of Austin food establishment license. License #FE-2022-04871. Issued: April 3, 2022. Current renewal valid: April 3, 2025 – March 31, 2026. Business name: Olive & Thyme LLC. Location: 1847 S Congress Ave, Austin TX 78704. Type: Food Service Establishment – Full Service Restaurant. Seating capacity: 65 (indoor). Outdoor dining: 8 seats (added per amendment September 2023). Operating hours: Tuesday–Sunday, 4:00 PM – 11:00 PM; Saturday–Sunday brunch 10:00 AM – 2:00 PM. Closed Monday.
+
+**A-05: Food Establishment Permit (Texas DSHS)**
+Texas Department of State Health Services food establishment permit. Permit #TEX-FS-2022-19847. Issued: April 8, 2022. Facility type: Restaurant (full-service, on-premise consumption + off-premise catering). Risk category: Type 3 (complex food preparation). Responsible person: Maria Konstantinou. Certified Food Manager: Dimitri Alexandros (CFM certificate #TX-FM-28491, expires September 2027).
+
+**A-06: Liquor License (TABC)**
+Texas Alcoholic Beverage Commission. Mixed Beverage Permit (MB), Permit #MB-2022-35871. Issued: May 15, 2022. Permittee: Olive & Thyme LLC. Location: 1847 S Congress Ave. Authorized: on-premise sale of all alcoholic beverages including mixed drinks, wine, beer, and spirits. Annual renewal current through May 15, 2026. No violations, suspensions, or complaints on record with TABC. Late Hours Certificate: authorized to serve until midnight Friday–Saturday.
+
+**A-07: Certificate of Good Standing**
+Texas Comptroller of Public Accounts. Certificate dated February 12, 2026. Certifies that Olive & Thyme LLC (Taxpayer ID: 32087654321) is in good standing. Franchise tax reports are current through the 2025 reporting year. Right to transact business in Texas is confirmed.
+
+**A-08: Organizational Chart**
+Visual org chart:
+- TOP: Maria Konstantinou — Managing Member & Owner-Operator (60%)
+  - Sidebar: James Park — Passive Member (40%), "Not involved in operations"
+- REPORTING TO MARIA:
+  - Dimitri Alexandros — Head Chef (oversees: 3 line cooks, 2 prep cooks)
+  - Sarah Chen — General Manager (oversees: 4 servers, 2 bartenders, 1 hostess)
+- Total headcount: 15 (including both owners, though James draws no salary)
+
+**A-09: Member Meeting Minutes (2023-2025)**
+Three sets of annual minutes:
+
+**Annual Meeting — March 20, 2023:**
+Present: Maria Konstantinou, James Park (via phone). Quorum confirmed. Approved FY2022 partial-year financials (revenue $410K for 9 months of operations, net loss $12K — expected for startup year). Approved purchase of new commercial oven ($45,000) to replace underperforming unit. Maria reported restaurant achieved profitability in Q4 2022. James expressed satisfaction with progress. No other business. Adjourned.
+
+**Annual Meeting — March 18, 2024:**
+Present: Maria Konstantinou, James Park (via phone). Quorum confirmed. Approved FY2023 financials (revenue $980K, net income $58K). Maria reported she has been using the restaurant kitchen on Mondays (closed day) for personal catering events — approximately 2-3 times per month. Maria stated she uses her own ingredients and occasionally asks kitchen staff to assist on a voluntary basis. James acknowledged and raised no objection. No formal resolution was adopted regarding this arrangement. Approved hiring of Sarah Chen as General Manager at $62,000/year. Discussed possible expansion to second location — tabled for future discussion. Adjourned.
+
+**Annual Meeting — March 15, 2025:**
+Present: Maria Konstantinou, James Park (in person). Quorum confirmed. Approved FY2024 financials (revenue $1,105K, net income $78.5K). Maria reported continued use of kitchen on Mondays for personal catering, noting it "continues on an informal basis" and that she "sometimes uses restaurant staff and equipment." James noted this should be formalized but no action was taken. Discussed potential sale of business — both members agreed to explore options. Maria to engage a broker. James stated he would support a sale at "the right price" given his desire to liquidate his investment. Discussed potential asking price range of $750K–$1M. Adjourned.
+
+### B. Financial (18 documents)
+
+**B-10: Financial Statements FY2023 (Reviewed)**
+Martinez & Associates CPAs — Independent Accountant's Review Report. "We have reviewed the accompanying financial statements of Olive & Thyme LLC... A review is substantially less in scope than an audit... we are not aware of any material modifications..."
+
+BALANCE SHEET (Dec 31, 2023):
+Assets: Cash $38,200. AR $3,100. Inventory $12,800. Prepaid expenses $4,500. Total current assets $58,600. Fixed assets (net) $141,000. Total assets $199,600.
+Liabilities: AP $31,400. Accrued expenses $8,200. Current portion LOC $0. Total current liabilities $39,600. Total liabilities $39,600.
+Members' equity: $160,000.
+
+INCOME STATEMENT (FY2023):
+Revenue: $980,000. COGS: $343,000 (35.0%). Gross Profit: $637,000.
+Operating Expenses: Salaries & wages $294,000. Payroll taxes & benefits $39,200. Rent $102,000. Utilities $29,400. Marketing & advertising $14,700. Insurance $18,600. Supplies & smallwares $19,600. Repairs & maintenance $12,100. Professional fees (accounting, legal) $6,400. Technology/software $7,200. Credit card processing $22,900. Depreciation $22,000. Miscellaneous $5,900. Total operating expenses $594,000.
+Operating income (EBITDA before depreciation): $88,000 (9.0% margin after add-back).
+Depreciation: $22,000. Interest expense: $1,200. Net income: $58,000.
+Distributions to members: $30,000 ($18K to Maria, $12K to James).
+
+Notes to Financial Statements:
+Note 1: Nature of business — restaurant operations.
+Note 2: Significant accounting policies — accrual basis, fiscal year ending December 31.
+Note 3: Related party transactions — none disclosed in FY2023. [Note: the catering arrangement began in 2023 but was not disclosed until FY2024 statements.]
+
+**B-11: Financial Statements FY2024 (Reviewed)**
+Same CPA firm, same review format.
+
+BALANCE SHEET (Dec 31, 2024):
+Assets: Cash $42,500. AR $4,200. Inventory $15,300. Prepaid $5,100. Total current $67,100. Fixed assets (net) $132,000. Total assets $199,100.
+Liabilities: AP $38,700. Accrued $9,100. LOC $0 (repaid Oct 2024). Total current $47,800. Total liabilities $47,800.
+Members' equity: $151,300.
+
+INCOME STATEMENT (FY2024):
+Revenue: $1,105,000. COGS: $387,000 (35.0%). Gross Profit: $718,000.
+Operating Expenses: Salaries & wages $332,400. Payroll taxes & benefits $43,600. Rent $105,100. Utilities $31,500. Marketing $16,600. Insurance $19,800. Supplies $22,100. Repairs & maintenance $14,800. Professional fees $7,100. Technology $8,400. CC processing $25,900. Depreciation $22,000. Miscellaneous $6,200. Total operating expenses $655,500.
+EBITDA: $110,000 (10.0%). Net income: $78,500.
+Distributions: $87,000 ($52.2K to Maria, $34.8K to James).
+
+Notes:
+Note 5: Related party transactions — "The managing member, Maria Konstantinou, operates a personal catering service that periodically utilizes the company's kitchen facility and equipment on Mondays when the restaurant is closed. Approximately 2-3 events per month. No rental income has been recorded for this use of company facilities. The managing member states she purchases her own ingredients and compensates any staff who assist independently. The financial impact of this arrangement has not been quantified."
+
+**Emphasis of Matter paragraph in review report:** "As discussed in Note 5, the Company has a related party arrangement with its managing member involving the use of company facilities. The financial impact of this arrangement has not been quantified or recorded in the financial statements."
+
+**B-12: Financial Statements FY2025 (Reviewed)**
+BALANCE SHEET (Dec 31, 2025):
+Assets: Cash $55,800. AR $5,000. Inventory $18,500. Prepaid $5,400. Total current $84,700. Fixed assets (net) $123,000. Savings account $42,000. Total assets $249,700.
+Liabilities: AP $47,000. Accrued $10,700. Total current $57,700. Total liabilities $57,700.
+Members' equity: $192,000.
+
+INCOME STATEMENT (FY2025):
+Revenue: $1,210,000. COGS: $423,500 (35.0%). Gross Profit: $786,500.
+Operating Expenses: Salaries & wages $352,800. Payroll taxes & benefits $46,500. Rent $108,300. Utilities $33,300. Marketing $18,200. Insurance $21,000. Supplies $24,200. Repairs & maintenance $16,800. Professional fees $8,200. Technology $9,600. CC processing $28,300. Depreciation $22,000. Miscellaneous $6,800. Total operating expenses $696,000.
+EBITDA: $133,000 (11.0%). Net income: $96,000.
+Distributions: $55,000 ($33K to Maria, $22K to James). [Note: lower distributions — building cash reserve for potential sale process.]
+
+Same related party note. Same emphasis of matter. Unchanged language year-over-year, which itself is a finding (issue identified but not resolved).
+
+**B-13: Management Accounts Q1 2026**
+Unaudited, unreviewed. Prepared by Maria Konstantinou.
+Revenue: $320,000 (Jan $98K, Feb $102K, Mar $120K). Annualizing to ~$1.28M.
+COGS: $112,000 (35.0%). Gross Profit: $208,000.
+Operating expenses: $175,000 (estimated, not fully categorized).
+EBITDA: $33,000 for Q1 (10.3% margin — slightly below FY2025 run rate).
+Note: "March revenue boosted by SXSW week — typically highest-revenue week of the year for South Congress restaurants."
+Cash on hand: $68,000 (operating) + $42,000 (savings).
+
+**B-14: Tax Returns FY2023, FY2024, FY2025**
+Three Form 1065 (U.S. Return of Partnership Income) summaries with Schedule K-1s.
+FY2023: Ordinary business income $58,000. K-1 to Maria: $34,800 (60%). K-1 to James: $23,200 (40%). Filed March 14, 2024. No extensions.
+FY2024: Ordinary business income $78,500. K-1 to Maria: $47,100. K-1 to James: $31,400. Filed March 12, 2025.
+FY2025: Ordinary business income $96,000. K-1 to Maria: $57,600. K-1 to James: $38,400. Filed March 10, 2026.
+All filed on time. No audit history. No IRS correspondence. No amended returns.
+
+**B-15: Sales Tax Filings (12 quarterly filings)**
+Texas Comptroller sales tax reports. Texas sales tax rate for Austin: 8.25% (6.25% state + 2.0% local).
+Quarterly filings 2023-2025 (12 total). All filed on time, no late penalties. Amounts reconcile with POS revenue reports. Sample: Q4 2025 — taxable sales $312,000, tax collected $25,740, tax remitted $25,740. No discrepancies.
+
+**B-16: Bank Statements — Operating Account (36-month summary)**
+First Texas Community Bank. Account ending in 4782.
+Monthly summary format: Opening balance | Deposits | Withdrawals | Ending balance.
+Key patterns: steady growth in deposits from ~$85K/month (early 2023) to ~$105K/month (late 2025). Average ending balance: $35K-55K. One notable event: August 2024 — deposits dropped to $72K (Q3 dip), ending balance fell to $8,200, triggered $20K LOC draw on August 28. LOC repaid October 15, 2024.
+
+**B-17: Bank Statements — Savings/Reserve Account**
+First Texas Community Bank. Account ending in 4783. Savings account opened January 2024. Monthly transfers from operating account: $3,000-5,000/month. Current balance (March 2026): $42,000. Maria's stated target: maintain 1 month of operating expenses (~$58K) as reserve. Not yet at target.
+
+**B-18: Credit Card Processing Statements (36-month summary)**
+Toast Payments. Processing rate: 2.6% + $0.10/transaction. Card payments represent ~85% of total revenue. Average monthly processing volume: $70K-86K. Monthly fees: $1,800-2,200. Zero chargebacks. 3 disputes in 3 years (all resolved in restaurant's favor). PCI compliance current.
+
+**B-19: Accounts Receivable Aging Report (as of March 2026)**
+Total AR: $5,000. Two items:
+(1) Corporate catering invoice — TechStart Inc., $3,200, dated March 12, 2026 (18 days old, within 30-day terms).
+(2) Corporate catering invoice — Austin Legal Group, $1,800, dated March 20, 2026 (10 days old).
+No past-due AR. Immaterial balance — restaurant operates primarily on point-of-sale collection.
+
+**B-20: Accounts Payable Aging Report (as of March 2026)**
+Total AP: $47,000.
+Current (0-30 days): $42,500 — Hill Country Provisions $21,000, other food suppliers $8,500, utilities $3,500, insurance quarterly premium $4,000, miscellaneous $5,500.
+Past due (31-60 days): $4,500 — Bright Spark Marketing (digital marketing agency, invoice dated February 8, 2026, $4,500 — Maria disputes the scope of work delivered, payment withheld pending resolution).
+Past due (61-90 days): $0.
+Total past due: $4,500 (9.6% of AP).
+
+**B-21: Inventory Valuation Report (as of March 2026)**
+Total inventory: $18,500.
+Food inventory: $14,000 — proteins $5,800, produce $2,400, dairy $1,800, dry goods/pantry $2,200, specialty items $1,800. Approximately 12 days of COGS on hand (industry norm: 5-10 days for perishables).
+Beverage inventory: $4,500 — wine $3,200 (including 3 cases of Ktima Gerovassiliou Malagousia, premium Greek wine, at $400/case = $1,200, slow-moving per Toast POS data — last bottle sold February 2), spirits $800, beer $500.
+Valued at lower of cost or market. No obsolescence write-down taken, though the slow-moving Greek wine may warrant one.
+
+**B-22: Fixed Asset Register with Depreciation Schedule**
+Total cost: $185,000. Accumulated depreciation: $62,000. Net book value: $123,000.
+Asset detail:
+- Commercial convection oven (Rational iCombi Pro) — $45,000, purchased Nov 2023, 7-year life, NBV $36,400
+- Walk-in cooler + freezer — $28,000, purchased Mar 2022, 10-year life, NBV $16,800 (compressor showing wear, out of warranty as of Mar 2025)
+- Dining furniture & fixtures — $35,000, purchased Mar 2022, 7-year life, NBV $15,000
+- Bar equipment — $22,000, purchased Mar 2022, 7-year life, NBV $9,400
+- Toast POS hardware (4 terminals) — $8,000, purchased Mar 2022, 5-year life, NBV $1,600 (approaching full depreciation)
+- Exterior signage — $12,000, purchased Mar 2022, 10-year life, NBV $7,200
+- Kitchen smallwares (cumulative) — $15,000, expensed/depreciated as purchased, NBV $14,600
+- Leasehold improvements — $20,000, amortized over lease term (10 years), NBV $12,000
+- Patio construction — $15,000, completed Sep 2023, amortized over remaining lease, NBV $11,300
+- Kitchen ventilation upgrade — $8,000, completed Jun 2024, 10-year life, NBV $6,800
+
+**B-23: Debt Schedule**
+Revolving line of credit: $75,000 limit with First Texas Community Bank. Secured by all business assets (blanket lien per UCC-1 filing). Interest: Prime + 2.0% (currently 9.5%). Current drawn balance: $0. Draw history: $20,000 drawn August 28, 2024 (cash flow shortfall during Q3 revenue dip), fully repaid October 15, 2024. Interest paid on draw: $312. No other debt instruments. No equipment financing. No SBA loans. No personal loans to/from members recorded on company books.
+
+**B-24: Cash Flow Projections (Seller-Prepared)**
+Prepared by Maria Konstantinou, March 2026. 3-year projections:
+FY2026: Revenue $1,320K (+9.1%), EBITDA $158K (12.0%). Assumes: continued delivery growth, brunch expansion, one 4% menu price increase (October 2026).
+FY2027: Revenue $1,450K (+9.8%), EBITDA $189K (13.0%). Assumes: second menu price increase, catering growth to 8% of revenue, hiring of sous chef.
+FY2028: Revenue $1,540K (+6.2%), EBITDA $200K (13.0%). Assumes: maturation, stable margins.
+NOTE: Projections do NOT address: lease expiry/renewal risk (2032), head chef contract expiry (Dec 2026), rising delivery commission impact on margins, potential need for kitchen equipment replacement ($23K+ estimated). No sensitivity analysis provided. No downside scenario.
+
+**B-25: Revenue Breakdown by Channel (monthly, 2023-2025)**
+Format: Month | Dine-in | Takeout | UberEats | DoorDash | Catering | Brunch | Total
+
+FY2023 annual totals: Dine-in $705K (72%), Takeout $88K (9%), UberEats $98K (10%), DoorDash $49K (5%), Catering $39K (4%), Brunch $0 (not yet started). Total: $980K.
+
+FY2024 annual totals: Dine-in $718K (65%), Takeout $88K (8%), UberEats $143K (13%), DoorDash $77K (7%), Catering $55K (5%), Brunch $24K (2%, started Q3). Total: $1,105K.
+
+FY2025 annual totals: Dine-in $750K (62%), Takeout $97K (8%), UberEats $182K (15%), DoorDash $97K (8%), Catering $60K (5%), Brunch $24K (2%). Total: $1,210K.
+
+Key trend: delivery (UberEats + DoorDash) grew from 15% to 23% of revenue. Dine-in shrank from 72% to 62% — not because dine-in declined in absolute terms ($705K → $750K) but because delivery grew faster.
+
+**B-26: Monthly POS Sales Reports (36 months)**
+Month-by-month total revenue (all channels combined):
+2023: Jan $72K, Feb $74K, Mar $78K, Apr $80K, May $82K, Jun $85K, Jul $83K, Aug $80K, Sep $82K, Oct $85K, Nov $88K, Dec $91K. Total: $980K.
+2024: Jan $82K, Feb $84K, Mar $88K, Apr $90K, May $92K, Jun $95K, Jul $82K, Aug $78K, Sep $80K, Oct $94K, Nov $102K, Dec $115K (holiday). Total: $1,105K.
+2025: Jan $88K, Feb $90K, Mar $95K, Apr $98K, May $100K, Jun $103K, Jul $98K, Aug $96K, Sep $99K, Oct $104K, Nov $110K, Dec $129K. Total: $1,210K.
+Note: Q3 2024 dip (Jul-Sep): revenue averaged $80K/month vs. $92K/month in Q2. Maria attributes to: (1) seasonal summer slowdown typical for Austin, (2) South Congress road construction project (TxDOT, July-September 2024) that reduced foot traffic and blocked parking. Q4 2024 recovery was strong.
+
+**B-27: Intercompany Transactions Schedule**
+Prepared by Maria Konstantinou at request of Martinez & Associates CPAs, March 2025.
+"Related Party Transaction Summary:
+Maria Konstantinou, Managing Member (60%), operates a personal catering service under the name 'Maria K Catering' (sole proprietorship, no separate entity formation). This service utilizes the Olive & Thyme kitchen on Mondays when the restaurant is closed, approximately 2-3 times per month.
+- No rent or facility fee is charged to Maria K Catering for use of the kitchen.
+- Maria purchases her own ingredients separately for catering events.
+- No Olive & Thyme staff are paid by the company for Monday catering work. Any staff who assist do so voluntarily or are compensated directly by Maria personally.
+- Estimated annual revenue of Maria K Catering: approximately $35,000-45,000 (not verified).
+- No company equipment has been damaged or consumed by catering activities.
+- This arrangement has been disclosed to James Park (40% member) who has raised no objection."
+
+**NOTE for AI models to catch:** This schedule states "No staff are paid by the company for Monday catering work." However, the 2025 Member Meeting Minutes (A-09) record Maria saying she "sometimes uses restaurant staff and equipment." This is a contradiction that should be flagged.
+
+### C. Property & Lease (7 documents)
+
+**C-28: Commercial Lease Agreement**
+Lease between SoCo Properties LLC ("Landlord") and Olive & Thyme LLC ("Tenant").
+Premises: 1847 South Congress Avenue, Austin, TX 78704. Approximately 2,400 sq ft ground floor retail/restaurant space.
+Term: 10 years, commencing March 1, 2022, expiring February 28, 2032.
+Base Rent: $8,500/month Year 1, with 3% annual escalation. Current (Year 4): $9,284.63/month. Year 5 (2026): $9,563.17/month.
+NNN Charges: Tenant's pro-rata share of CAM, property taxes, and building insurance. Currently approximately $2,200/month.
+Patio supplement (per Amendment #1): $500/month.
+Total current monthly occupancy cost: approximately $12,263.
+Security deposit: $17,000 (2 months initial base rent).
+Permitted use: "Restaurant and bar for the preparation and sale of food and alcoholic beverages for on-premise and off-premise consumption."
+Assignment: "Tenant may not assign this Lease or sublet the Premises without the prior written consent of Landlord, which consent shall not be unreasonably withheld, conditioned, or delayed. Landlord may condition consent upon: (a) payment of an assignment fee of $5,000; (b) the proposed assignee demonstrating minimum 3 years restaurant management experience; (c) the proposed assignee providing evidence of net worth of not less than $500,000; (d) the proposed assignee assuming all obligations under this Lease."
+**RENEWAL: "This Lease does not include any option to renew or extend the Term. Upon expiration, Tenant shall surrender the Premises in accordance with Section 18."**
+Personal Guarantee: Maria Konstantinou personally guarantees all obligations under this Lease for the first five (5) years of the Term (March 1, 2022 through February 28, 2027). "After the Guarantee Period, Tenant's obligations shall be limited to the assets of Olive & Thyme LLC."
+Maintenance: Tenant responsible for interior maintenance, HVAC maintenance, and grease trap. Landlord responsible for roof, structural elements, exterior walls, and parking lot.
+Default/Termination: Standard provisions. 10-day cure for monetary default, 30-day cure for non-monetary.
+
+**C-29: Lease Amendment #1**
+Dated September 15, 2023. Between SoCo Properties LLC and Olive & Thyme LLC.
+Amends Section 3 (Premises) to include approximately 200 sq ft of sidewalk area directly in front of the Premises for outdoor dining use ("Patio Area"). Tenant authorized to install movable tables, chairs, planters, and a low railing. Maximum 8 additional seats. All furniture must be removable (no permanent structures). Tenant responsible for: obtaining City of Austin sidewalk dining permit, maintaining furniture, insurance covering patio area. Additional rent: $500/month. Landlord may terminate patio authorization with 90 days' notice if required by city regulations or building needs. All other terms of the Lease remain unchanged.
+
+**C-30: Rent Payment History (36 months)**
+Ledger from SoCo Properties LLC showing monthly rent payments March 2022 – March 2026.
+All 48 payments made on time (by the 1st of each month). No late payments. No partial payments. No NSF checks. Current monthly total: Base $9,563 + NNN $2,200 + Patio $500 = $12,263.
+Running total rent paid since inception: approximately $520,000.
+
+**C-31: Property Condition Report**
+Prepared by Austin Building Inspections LLC, February 18, 2026. Commissioned by Olive & Thyme.
+Overall condition: GOOD.
+Kitchen: Well-maintained. Commercial equipment in working order. Walk-in cooler: compressor running, thermostat recently recalibrated (following Nov 2024 health inspection finding). Dishwasher: operational but showing age (frequent drain pump issues, 2 service calls in past 6 months — recommend budgeting for replacement within 12 months).
+Dining area: Good condition. Floor tiles in high-traffic areas showing wear. Lighting fixtures all functional. Restrooms clean, ventilation adequate.
+Bar: Good condition. Refrigeration units operating within spec.
+HVAC: System is a Trane RTU, original to building, installed 2015. **Approaching end of typical useful life (15-20 years for commercial HVAC).** Currently functional. Last serviced December 2025. Recommend budgeting $15,000-22,000 for replacement within 3-5 years. Note: per lease, HVAC maintenance is tenant responsibility but the unit is landlord's property — replacement responsibility should be clarified.
+Plumbing: Minor leak under prep sink identified and repaired January 2026. No other issues.
+Electrical: Adequate for current use. Panel capacity sufficient.
+Exterior/Patio: Good condition. Furniture (wrought iron tables and chairs) showing weather wear — recommend sanding and repainting ($2,000-3,000).
+Grease trap: Functional. Last pumped November 2025. On quarterly schedule.
+
+**C-32: Renovation and Improvement Records**
+Summary of capital improvements by Olive & Thyme LLC:
+(1) Initial buildout (March 2022): $20,000 — kitchen modifications, plumbing adjustments, lighting, paint, minor structural. Permits obtained.
+(2) Patio construction (September 2023): $15,000 — wrought iron railing, 4 tables, 16 chairs, 6 planters, outdoor lighting.
+(3) Kitchen ventilation upgrade (June 2024): $8,000 — replaced exhaust hood filters and added additional ventilation per fire department recommendation.
+Total invested in leasehold improvements: $43,000.
+**All improvements are classified as leasehold improvements and will revert to the landlord upon lease expiration or termination per Section 18 of the Lease. Tenant has no right to remove fixtures permanently attached to the Premises.**
+
+**C-33: Zoning Compliance Confirmation**
+City of Austin Development Services Department letter, dated April 2022.
+Property at 1847 S Congress Ave is zoned CS (General Commercial Services). Restaurant use (SIC 5812) is permitted by right under CS zoning. No special use permit required for indoor dining. Outdoor dining/sidewalk cafe authorized under conditional use permit #CUP-2023-08471 (granted September 2023). Conditions: maximum 8 seats, movable furniture only, ADA path of travel maintained, operating hours limited to restaurant's regular hours.
+
+**C-34: Landlord Estoppel Certificate**
+Dated March 1, 2026. From SoCo Properties LLC, signed by Robert Chen, Property Manager.
+Certifies: (1) Lease is in full force and effect, not modified except by Amendment #1. (2) No defaults by Tenant. (3) No defaults by Landlord. (4) Rent is current with no arrearages. (5) Security deposit of $17,000 is held. (6) **No renewal or extension options exist under the Lease.** (7) The Lease expires February 28, 2032. (8) Assignment requires Landlord's prior written consent per Section 14. (9) No pending disputes between Landlord and Tenant.
+
+### D. Employment & HR (9 documents)
+
+**D-35: Employee Roster (as of March 2026)**
+15 employees total:
+
+| # | Name | Role | Start Date | Salary/Wage | Status |
+|---|------|------|-----------|-------------|--------|
+| 1 | Maria Konstantinou | Managing Member/Owner | Mar 2022 | $85,000/yr | Full-time |
+| 2 | James Park | Passive Member | Mar 2022 | $0 | Not active |
+| 3 | Dimitri Alexandros | Head Chef | Sep 2022 | $78,000/yr | Full-time |
+| 4 | Sarah Chen | General Manager | Jun 2023 | $62,000/yr | Full-time |
+| 5 | Carlos Mendez | Line Cook | Apr 2022 | $42,000/yr | Full-time |
+| 6 | Anh Nguyen | Line Cook | Jan 2024 | $40,000/yr | Full-time |
+| 7 | Marcus Williams | Line Cook | Aug 2025 | $38,000/yr | Full-time |
+| 8 | Pavel Kowalski | Prep Cook | Mar 2023 | $34,000/yr | Full-time, H-2B visa |
+| 9 | Diego Ramirez | Prep Cook | Jun 2024 | $32,000/yr | Full-time, H-2B visa |
+| 10 | Emma Torres | Server | May 2023 | $2.13/hr + tips | Full-time |
+| 11 | Jake Morrison | Server | Sep 2024 | $2.13/hr + tips | Full-time |
+| 12 | Lisa Park | Server | Feb 2025 | $2.13/hr + tips | Full-time |
+| 13 | Chloe Adams | Server | Nov 2025 | $2.13/hr + tips | Part-time |
+| 14 | Daniel Kim | Bartender | Apr 2022 | $2.13/hr + tips | Full-time |
+| 15 | Rachel Green | Bartender | Mar 2024 | $2.13/hr + tips | Full-time |
+| 16 | Sofia Martinez | Hostess | Oct 2025 | $15.00/hr | Part-time |
+
+Staff departures in 2025: 4 (2 servers, 1 hostess, 1 bartender — all front-of-house, replaced within 2-4 weeks). No kitchen staff departures since inception except 1 line cook in late 2024 (Marcus Williams hired as replacement August 2025).
+
+**D-36: Head Chef Employment Agreement — Dimitri Alexandros**
+[This is notably informal — a simple offer letter, not a comprehensive employment agreement]
+
+"Dear Dimitri,
+
+We are pleased to offer you the position of Head Chef at Olive & Thyme, effective September 1, 2022.
+
+Compensation: $78,000 per year, paid bi-weekly. This rate has not been adjusted since your start date.
+Schedule: Tuesday through Saturday, approximately 50 hours per week. Sunday and Monday off.
+Benefits: Health insurance (company pays 50% of premium) after 90-day probationary period. Two (2) weeks paid time off per year.
+Employment type: At-will. Either party may terminate this relationship at any time with two (2) weeks written notice.
+Initial commitment: We ask for your commitment through at least December 31, 2026, though this is not a binding obligation.
+
+We look forward to working with you.
+
+Sincerely,
+Maria Konstantinou
+Managing Member, Olive & Thyme LLC"
+
+[Signed by both parties September 1, 2022]
+
+**Notable absences:** No non-compete clause. No non-solicitation clause. No intellectual property assignment (recipes, menu concepts). No confidentiality agreement. No bonus or performance incentive structure. No provisions regarding termination for cause vs. without cause. No provisions for salary review. This document would not be considered a robust employment agreement by any employment attorney.
+
+**D-37: General Manager Employment Agreement — Sarah Chen**
+[More formal than the chef agreement — appears to be a template Maria found online]
+
+Employment Agreement between Olive & Thyme LLC and Sarah Chen, dated June 1, 2023.
+Position: General Manager. Reports to: Managing Member.
+Compensation: $62,000/year, paid bi-weekly. Annual review in June.
+Benefits: Health insurance (50% employer-paid), 2 weeks PTO, 6 paid holidays.
+At-will employment with 30-day notice period.
+
+Section 7 — Non-Competition: "For a period of six (6) months following termination of employment for any reason, Employee shall not directly or indirectly engage in, own, manage, or operate any restaurant within a five (5) mile radius of 1847 South Congress Avenue, Austin, TX."
+
+Section 8 — Non-Solicitation: "For a period of twelve (12) months following termination, Employee shall not solicit, recruit, or hire any employee of the Company."
+
+Section 9 — Confidentiality: Standard confidentiality clause covering customer lists, financial information, and business methods.
+
+No IP assignment clause. No bonus structure.
+
+**D-38: Standard Employment Template (for all other staff)**
+Generic at-will offer letter template:
+"Dear [Name], We are pleased to offer you the position of [Title] at Olive & Thyme... Compensation: [Amount]... Employment is at-will... [signed, Maria Konstantinou]"
+No non-compete. No non-solicitation. No confidentiality clause. No benefits detail (refers to "employee handbook" — but no formal handbook exists).
+
+**D-39: Non-Compete / Non-Solicitation Summary**
+Prepared by Maria for the data room:
+"Summary of Restrictive Covenants:
+- Sarah Chen (GM): 6-month non-compete (5-mile radius), 12-month non-solicitation of employees.
+- Dimitri Alexandros (Head Chef): NONE. His offer letter does not contain any restrictive covenants.
+- All other staff: NONE.
+- Maria Konstantinou (Owner): No existing non-compete. A non-compete/non-solicitation would be negotiated as part of any acquisition agreement.
+Note: Texas generally enforces non-competes if they are reasonable in scope, geography, and duration, and are supported by consideration."
+
+**D-40: Payroll Records Summary (36 months)**
+Monthly payroll totals (gross wages + employer payroll taxes + benefits):
+FY2023: Total $333,200. Monthly avg $27,767. Payroll as % of revenue: 34.0%.
+FY2024: Total $376,000. Monthly avg $31,333. Payroll as % of revenue: 34.0%.
+FY2025: Total $399,300. Monthly avg $33,275. Payroll as % of revenue: 33.0%.
+All federal (941) and state payroll tax filings current. No DOL inquiries. No wage claims. FICA, FUTA, and SUTA all current.
+
+**D-41: Benefits Summary**
+Group health insurance: Blue Cross Blue Shield of Texas, small group plan. Employer contribution: 50% of employee-only premium ($350/month employer share per enrolled employee). Currently 9 employees enrolled. Dental and vision available at full employee cost (3 employees enrolled in dental, 2 in vision). No 401(k) or retirement plan. No equity compensation. No profit sharing. PTO: 2 weeks (10 days) for all full-time employees. 6 paid holidays (New Year's, Memorial Day, July 4th, Labor Day, Thanksgiving, Christmas). No formal employee handbook — policies communicated verbally.
+
+**D-42: Workers' Compensation Claims History**
+Carrier: Texas Mutual Insurance Company. Policy period: annual.
+Claims history:
+(1) July 14, 2023 — Kitchen burn. Employee: Carlos Mendez (line cook). Minor grease splash on forearm. First aid + clinic visit. Medical cost: $800. No lost work time. Claim closed.
+(2) March 22, 2024 — Back strain. Employee: Pavel Kowalski (prep cook). Lifting heavy stock pot. Clinic visit + physical therapy (3 sessions). Medical cost: $2,100. Lost time: 3 days. Claim closed.
+(3) November 8, 2025 — Laceration. Employee: Anh Nguyen (line cook). Cut on left hand requiring 6 stitches. ER visit. Medical cost: $1,400. No lost time (returned next shift with glove). Claim closed.
+Experience modification rate (EMR): 1.05 (slightly above base of 1.00 — normal for restaurants with a few claims). No OSHA citations or investigations.
+
+**D-43: Work Permits / Immigration Status**
+All 15 employees authorized to work in the United States. Form I-9 on file for each employee.
+Two employees hold H-2B temporary worker visas:
+- Pavel Kowalski (prep cook): H-2B visa valid through September 30, 2026. Sponsored by Olive & Thyme LLC. Renewal petition must be filed by July 2026 (90 days prior to expiry).
+- Diego Ramirez (prep cook): H-2B visa valid through September 30, 2026. Same sponsorship and renewal timeline.
+Cost of H-2B renewal: approximately $2,500 per worker (attorney fees + filing fees).
+Note: if the business is sold, the new owner would need to file amended petitions as the new employer-sponsor — additional cost and processing time.
+
+### E. Operational (10 documents)
+
+**E-44: Current Menu with Pricing**
+OLIVE & THYME — Mediterranean Kitchen & Wine Bar
+
+DINNER (Tuesday – Sunday, 5:00 PM – 10:00 PM)
+
+Appetizers: Grilled Octopus, chickpea purée, lemon-caper vinaigrette — $18. Spanakopita, hand-rolled phyllo, local feta — $14. Mezze Platter for Two, hummus, baba ganoush, muhammara, warm pita — $16. Burrata, heirloom tomatoes, basil oil — $15. Lamb Keftedes, tzatziki, pickled onion — $13. Soup of the Day — $12.
+
+Entrees: Whole Grilled Branzino, lemon, herbs, roasted potatoes — $36. Lamb Chops, herb crust, pomegranate molasses, roasted vegetables — $38. Chicken Souvlaki, rice pilaf, grilled vegetables, tzatziki — $24. Moussaka, traditional preparation, béchamel — $22. Shrimp Saganaki, tomato, feta, ouzo flambé — $28. Grilled Salmon, quinoa tabbouleh, tahini — $30. Vegetable Tagine, preserved lemon, couscous — $20.
+
+Desserts: Baklava, house-made, pistachio, honey — $12. Galaktoboureko, semolina custard, phyllo, citrus syrup — $13. Loukoumades, honey, walnuts, cinnamon — $12. Olive Oil Cake, seasonal fruit, mascarpone — $15.
+
+BRUNCH (Saturday – Sunday, 10:00 AM – 2:00 PM)
+Shakshuka, eggs, spicy tomato, feta, sourdough — $18. Mediterranean Benedict, lamb merguez, harissa hollandaise — $22. Greek Yogurt Bowl, honey, granola, seasonal fruit — $16. Avocado & Halloumi Toast, za'atar, lemon — $18. Brunch Mezze, selection of dips, eggs, flatbread — $24.
+
+WINE (by the glass): Selection of 12 wines, $14-22. Full wine list available.
+COCKTAILS: Mediterranean-inspired cocktails, $15-18.
+
+Average check per person: Dinner dine-in $52, Brunch $38, Delivery $38 (lower due to no alcohol).
+
+**E-45: Food Cost Analysis (FY2025, monthly detail)**
+Overall annual food cost: 35.0% of revenue ($423,500 / $1,210,000).
+Monthly COGS breakdown by category:
+- Proteins (lamb, fish, chicken, shrimp, octopus): 42% of COGS ($177,870). Lamb and branzino are highest-cost items. Branzino sourced from Mediterranean import distributor at $14/lb (restaurant price point covers this well).
+- Produce: 22% of COGS ($93,170). Seasonal variation: winter produce costs 15-20% higher due to imports. Local sourcing May-October reduces cost.
+- Dairy (feta, halloumi, yogurt, butter, cream): 12% of COGS ($50,820).
+- Dry goods (flour, rice, pasta, spices, olive oil): 10% of COGS ($42,350). Olive oil is a significant line item — premium Greek EVOO at $28/liter.
+- Beverages/wine cost: 14% of COGS ($59,290). Wine cost of goods: ~30% of wine revenue (healthy margin). Spirit cost: ~22%.
+
+Delivery order food cost: 38% (higher than dine-in 34%) due to: packaging costs ($0.85-1.20 per order), portion consistency (no server to manage), occasional re-makes for delivery complaints. Delivery platform commissions are NOT included in COGS — they're in operating expenses under "technology/commissions."
+
+**E-46: Supplier Contract — Hill Country Provisions**
+Supply Agreement between Hill Country Provisions LLC ("Supplier") and Olive & Thyme LLC ("Buyer"). Dated: April 1, 2022.
+Term: Month-to-month. Either party may terminate with 30 days written notice.
+Products supplied: All proteins (lamb, chicken, beef, pork), most dairy products, specialty Mediterranean items (imported olives, capers, preserved lemons), some produce. Hill Country Provisions is the exclusive supplier of lamb sourced from Fredericksburg Ranch (specific Texas heritage breed lamb used in signature lamb chops — key to the dish's reputation).
+Pricing: "Current market rate plus 8% handling and delivery fee." Prices updated weekly based on market conditions. No price cap. No volume discount. No price lock for any period.
+Delivery: 3x per week (Tuesday, Thursday, Saturday). Minimum order: $1,500 per delivery.
+Payment: Net 30.
+No exclusivity clause (Olive & Thyme can buy from other suppliers), but in practice Hill Country is 45% of total food purchases due to the range of products supplied and the exclusive lamb source.
+No backup supplier identified in the agreement or elsewhere in the data room for the lamb specifically.
+
+**E-47: Supplier Contract — Lone Star Beverage Distributors**
+Distribution Agreement dated March 15, 2022.
+Lone Star supplies: all wine, beer, and spirits.
+Term: 12 months, auto-renewing unless 60 days notice.
+Pricing: Standard wholesale pricing per current price list. Volume discount: 5% on monthly orders exceeding $5,000. (Note: Olive & Thyme currently orders approximately $4,800/month — just below the discount threshold.)
+Delivery: Weekly (Wednesdays).
+Payment: Net 15.
+No exclusivity (restaurant can buy from other distributors for specialty wines — and does, for the Greek wines).
+
+**E-48: Delivery Platform Agreements**
+Two agreements:
+
+(1) UberEats Merchant Agreement — standard form agreement, signed April 2022.
+Commission: 30% of order subtotal (before tax and tip). Includes access to UberEats platform, delivery logistics, and customer service. Restaurant responsible for: food preparation, packaging, accuracy. UberEats provides: tablet ($100/month rental), delivery drivers, customer refunds for delivery issues. Non-exclusive. Terminable by either party with 7 days notice.
+
+(2) DoorDash Merchant Agreement — signed August 2022.
+Commission: 25% of order subtotal (negotiated down from 30% in exchange for "DashPass Preferred Partner" designation, which gives priority placement in search results). Similar terms to UberEats. Tablet rental: $100/month. Non-exclusive. Terminable with 14 days notice.
+
+Combined delivery revenue FY2025: $279K (23% of total). Combined commission expense: approximately $76K (UberEats: $54.6K at 30%, DoorDash: $24.3K at 25%). This commission expense is recorded under operating expenses, NOT in COGS. If reclassified to COGS, effective food cost on delivery orders would be approximately 62% (38% food cost + ~27% commission = 65%, offset by slightly higher delivery menu prices).
+
+**E-49: Equipment List with Condition Assessment**
+Prepared February 2026.
+
+| Equipment | Year | Condition (1-5) | Est. Replacement Cost | Notes |
+|-----------|------|-----------------|----------------------|-------|
+| Rational iCombi Pro Oven | 2023 | 5/5 | $45,000 | Excellent, under warranty until Nov 2026 |
+| Walk-in Cooler (Kolpak) | 2022 | 3/5 | $28,000 | Compressor showing wear, thermostat recalibrated Nov 2024, out of warranty |
+| Walk-in Cooler Compressor only | — | 2/5 | $8,000 | May need replacement within 12 months |
+| Commercial Dishwasher (Hobart) | 2022 | 2/5 | $12,000 | Frequent drain pump issues, 2 service calls in 6 months |
+| 6-burner Gas Range | 2022 | 4/5 | $8,000 | Good condition |
+| Charbroiler/Grill | 2022 | 3/5 | $5,000 | Functional, grates worn |
+| Deep Fryer (2-basket) | 2022 | 4/5 | $3,000 | Good |
+| Prep Tables (stainless, 3) | 2022 | 4/5 | $4,500 | Good |
+| Bar Refrigeration (under-counter, 3 units) | 2022 | 4/5 | $9,000 | Good |
+| Toast POS (4 terminals) | 2022 | 3/5 | $8,000 | Functional, one screen intermittently unresponsive |
+| Patio Furniture (4 tables, 16 chairs) | 2023 | 3/5 | $6,000 new / $3,000 refinish | Weather wear, needs repainting |
+| Exterior Signage | 2022 | 4/5 | $12,000 | Good |
+
+**Estimated near-term CAPEX (within 12 months):** Dishwasher replacement $12,000 + cooler compressor $8,000 + patio refinish $3,000 = **$23,000 minimum.**
+**Medium-term CAPEX (1-3 years):** HVAC replacement $15,000-22,000 (building system, but tenant's maintenance responsibility — ownership of replacement unclear per lease).
+
+**E-50: Maintenance Contracts**
+(1) HVAC: Comfort Air Austin. Quarterly preventive maintenance. $450/quarter ($1,800/year). Covers: filter replacement, coil cleaning, refrigerant check, thermostat calibration. Does NOT cover major repairs or replacement.
+(2) Pest Control: ABC Pest Solutions. Monthly inspection and treatment. $150/month ($1,800/year). Clean record — no significant pest findings.
+(3) Grease Trap: Austin Grease Services. Quarterly pumping and inspection. $375/quarter ($1,500/year). City of Austin FOG compliance.
+(4) Fire Suppression: Texas Fire Equipment Co. Annual inspection of Ansul kitchen suppression system and fire extinguishers. $300/year.
+(5) Dishwasher: Service agreement with Commercial Kitchen Repair of Austin. On-call service, $150/visit + parts. 4 service calls in 2025 ($600 + $480 parts = $1,080).
+Total annual maintenance contracts: approximately $6,480 + ad hoc repairs.
+
+**E-51: Technology / Systems Overview**
+- POS: Toast. Cloud-based. 4 terminals (3 dining room, 1 bar). $150/month subscription + 2.6% + $0.10 processing. Includes: ordering, payment, inventory tracking (basic), reporting, online ordering portal, loyalty program module.
+- Reservations: Resy. $249/month. Average 40-60 covers/night booked via Resy. Walk-ins: approximately 20-30% of covers.
+- Accounting: QuickBooks Online. $80/month. Managed by Maria with quarterly CPA review.
+- Staff Scheduling: 7shifts. $100/month. Used by Sarah Chen for all scheduling, time tracking.
+- Website: Squarespace. $30/month. Basic informational site with menu, hours, Resy booking widget. No online ordering through website (uses platform apps instead).
+- Social Media: Instagram (4,200 followers), Facebook (1,800 followers). Managed in-house by Sarah Chen. Posting frequency: 3-4x/week. No paid advertising budget (the $18,200 marketing expense is the Bright Spark Marketing agency fee for occasional promotional campaigns and Google Ads).
+- Delivery Tablets: UberEats tablet + DoorDash tablet. $200/month combined rental.
+- Total monthly technology cost: approximately $809/month ($9,708/year) excluding CC processing.
+- No proprietary software. No custom development. No technology IP. All systems are standard SaaS subscriptions transferable to a new owner.
+
+**E-52: Customer Reviews Summary**
+Compiled from Google, Yelp, TripAdvisor as of March 2026.
+
+Google: 4.4 stars, 380 reviews.
+Trend: 2023 avg 4.6 (85 reviews), 2024 avg 4.3 (140 reviews), 2025 avg 4.5 (155 reviews).
+The 2024 dip correlates with the Q3 construction period — 12 reviews mentioning "hard to get to," "construction," "parking nightmare." Scores recovered strongly in Q4 2024 and maintained through 2025.
+
+Yelp: 4.0 stars, 120 reviews. Consistent. Most Yelp reviews are from 2022-2023 (early adopters).
+
+TripAdvisor: 4.5 stars, 45 reviews. Mostly tourists — seasonal pattern (more reviews in spring/fall, SXSW week).
+
+Top positive themes (across platforms): "incredible branzino" (mentioned 30+ times), "beautiful patio" (25+), "great wine list" (20+), "authentic Mediterranean" (15+), "Maria is wonderful" (12+ — owner engagement is a draw).
+
+Top negative themes: "slow service on busy nights" (18 mentions — consistent across years), "parking is difficult" (15 — location issue), "pricey for what it is" (8 — price sensitivity), "delivery food arrives cold" (3 mentions, all 2025 — emerging issue), "noisy inside" (5 — acoustics).
+
+No responses from management to negative reviews on any platform.
+
+**E-53: Loyalty Program / Customer Database**
+Toast Loyalty module. Launched September 2023.
+Enrolled members: 2,800 (as of March 2026).
+Program structure: 1 point per $1 spent. 100 points = $10 reward. Average redemption rate: 62%.
+Member visit frequency: 2.3x/month (vs. non-member estimated at 1.1x/month).
+Member average check: $58 (vs. overall $52 — members spend more).
+Email marketing: 4,200 email subscribers (includes loyalty members + website signups). Monthly newsletter. Open rate: 32% (industry avg for restaurants: 20%). Click-through rate: 4.8%.
+Customer data: names, emails, visit history, order history stored in Toast. Data is associated with the Toast account — would transfer to new owner with the POS subscription. No separate CRM. No customer data analysis or segmentation beyond Toast's built-in reports.
+
+### F. Regulatory & Compliance (5 documents)
+
+**F-54: Health Inspection Reports (3 inspections)**
+
+**Inspection #1 — June 12, 2023:**
+Austin Public Health, Food Establishment Inspection.
+Score: 96/100.
+Critical violations: 0.
+Non-critical violations: 2.
+(1) Item 37: Two containers in walk-in cooler not labeled with contents and date — corrected on-site during inspection.
+(2) Item 43: Hand soap dispenser in women's restroom empty — refilled during inspection.
+Inspector notes: "Well-maintained facility. Staff knowledgeable about food safety procedures. Certified Food Manager (Dimitri Alexandros) present during inspection."
+Result: PASS.
+
+**Inspection #2 — March 5, 2024:**
+Score: 98/100.
+Critical violations: 0.
+Non-critical violations: 1.
+(1) Item 35: Employee personal food stored in walk-in cooler without name and date label — corrected on-site.
+Inspector notes: "Excellent condition. No concerns."
+Result: PASS.
+
+**Inspection #3 — November 14, 2024:**
+Score: 91/100.
+**Critical violations: 1.**
+(1) **Item 2: Cold holding temperature — walk-in cooler measured at 44°F at time of inspection. Required maximum: 41°F.** Thermostat found to be miscalibrated. Inspector issued corrective action notice. **Olive & Thyme had 48 hours to correct and schedule re-inspection.**
+Non-critical violations: 2.
+(1) Item 33: Floor tiles cracked near dishwasher — trip hazard. Repaired within 1 week.
+(2) Item 45: Grease buildup on wall behind fryer — cleaned same day.
+Inspector notes: "Walk-in cooler temperature noncompliance is a critical violation requiring immediate corrective action. Operator was cooperative and immediately called a refrigeration technician."
+
+**Re-inspection — December 2, 2024:**
+Score: 99/100.
+Walk-in cooler: thermostat recalibrated by Austin Commercial Refrigeration on November 15. Temperature measured at 38°F — compliant. Cracked floor tiles repaired. All previous violations corrected.
+Result: PASS. Critical violation closed.
+
+**F-55: Fire Safety Certificate**
+Austin Fire Department, Fire Prevention Division.
+Inspection date: October 8, 2025.
+Result: APPROVED.
+Occupancy: 73 persons maximum (65 indoor + 8 patio).
+Fire suppression: Ansul R-102 wet chemical system in kitchen hood — inspected, charged, operational. Last activation test: October 2025.
+Fire extinguishers: 4 units (kitchen, dining room, bar, patio) — all inspected, current tags.
+Emergency exits: 2 — front entrance (36" door) and kitchen rear exit (36" steel door to alley). Both unobstructed. Illuminated exit signs functional. Emergency lighting: 4 battery-backup units — all functional.
+Smoke detectors: 6 units — all tested and operational.
+Sprinkler system: Building has wet sprinkler system (landlord's responsibility) — last inspection by landlord's contractor July 2025, passed.
+No violations. No fire incidents on record.
+
+**F-56: Insurance Policies (current)**
+Agent: Hill Country Insurance Agency, Austin TX.
+All policies renew annually in March.
+
+(1) Commercial General Liability — Hartford Financial. Policy #GL-2022-78451. $1,000,000 per occurrence / $2,000,000 aggregate. Covers: bodily injury, property damage, personal/advertising injury, products/completed operations. Premium: $4,200/year. Deductible: $5,000.
+
+(2) Commercial Property — Hartford Financial. Policy #CP-2022-78452. Contents coverage: $500,000. Business interruption: 12 months actual loss sustained. Premium: $2,800/year. Deductible: $2,500. Covers: fire, theft, water damage, vandalism. Does NOT cover flood (not in flood zone per FEMA).
+
+(3) Liquor Liability — Hartford Financial. Policy #LL-2022-78453. $1,000,000 per occurrence. Covers: liability arising from sale/service of alcoholic beverages. Premium: $3,600/year.
+
+(4) Workers' Compensation — Texas Mutual Insurance. Policy #WC-2025-91204. Statutory limits per Texas law. Employer's liability: $500K/$500K/$500K. Premium: $8,400/year (based on payroll and EMR of 1.05).
+
+(5) Commercial Umbrella — Hartford Financial. Policy #UMB-2022-78454. $2,000,000 excess over GL, liquor, and auto (no auto policy — restaurant doesn't own vehicles). Premium: $2,000/year.
+
+Total annual insurance cost: $21,000.
+
+Claims history provided to buyer: 1 GL claim (Doe slip-and-fall, settled $15K, insurer paid $10K after $5K deductible). 3 WC claims (see D-42). No liquor liability claims. No property claims.
+
+**F-57: Environmental Compliance Records**
+(1) Grease Trap Permit — Austin Water Utility. Permit #GT-2022-5891. Olive & Thyme operates a grease interceptor (1,000-gallon capacity) as required for food service establishments. Quarterly pumping required and documented.
+Pumping records: March 2023, June 2023, September 2023, December 2023, March 2024, June 2024, September 2024, December 2024, March 2025, June 2025, September 2025, November 2025 (moved up from December). All performed by Austin Grease Services.
+(2) FOG (Fats, Oils, Grease) Compliance Inspection — Austin Water Utility, March 12, 2025. Result: COMPLIANT. Grease trap in good condition, no blockages, proper maintenance records on file.
+(3) Waste Hauling — Texas Disposal Systems. 2-yard dumpster, 3x/week pickup. $280/month. Recycling: cardboard and glass recycling through TDS. Composting: not currently implemented.
+No environmental violations. No hazardous materials on-site (beyond standard restaurant cleaning chemicals — SDS sheets on file).
+
+**F-58: Alcohol Compliance Records**
+TABC requires all servers and bartenders to complete a TABC-approved seller/server training course.
+Certificates on file for all 10 front-of-house employees authorized to serve alcohol. All current (certification valid for 2 years).
+Server training records: tracked in 7shifts. Last full team re-certification: January 2026.
+Incident log: No incidents of service to minors. No intoxicated patron incidents requiring documentation. No TABC complaints or investigations.
+Age verification policy: posted at bar and hostess stand. Policy: ID required for anyone appearing under 40. Acceptable ID: driver's license, passport, military ID.
+
+### G. Legal (3 documents)
+
+**G-59: Litigation Schedule**
+Prepared for data room, March 2026.
+
+**Pending litigation:** None.
+
+**Resolved litigation (past 3 years):**
+(1) **Doe v. Olive & Thyme LLC** — Travis County District Court, Cause No. D-1-GN-24-008741.
+Filed: October 28, 2024.
+Plaintiff: Jane Doe (customer).
+Claim: Premises liability — plaintiff slipped on wet restroom floor on October 12, 2024, suffering bruised left hip and lower back strain. Plaintiff alleged negligence: "Floor was wet from recent mopping. No wet floor sign or barrier was posted."
+Demand: $50,000 (medical expenses $3,800 + pain and suffering).
+Internal incident report (attached): Floor had been mopped by busser approximately 10 minutes before the incident. No "wet floor" sign was placed. Two witnesses (server and another customer) confirmed the floor was visibly wet.
+Settlement: January 15, 2025. Settlement amount: $15,000. Hartford General Liability paid $10,000; restaurant paid $5,000 deductible. Plaintiff signed full release.
+Corrective action taken: purchased 4 "wet floor" signs, implemented policy requiring signs during and after any mopping. Added to staff training checklist.
+
+**Threatened litigation:** None.
+**Regulatory proceedings:** None (the health inspection violation was not a regulatory proceeding).
+
+**G-60: Regulatory Violations / Fines History**
+Summary of all regulatory interactions:
+(1) Health inspection critical violation — November 14, 2024. Walk-in cooler temperature 44°F (max 41°F). No fine assessed — violation corrected within cure period and passed re-inspection December 2, 2024.
+(2) No TABC violations, suspensions, or complaints.
+(3) No OSHA citations or investigations.
+(4) No Department of Labor inquiries or wage claims.
+(5) No City of Austin code violations.
+(6) No fire code violations.
+(7) No environmental violations.
+Total fines paid: $0.
+
+**G-61: Trademark / Intellectual Property**
+Memo prepared by Maria Konstantinou, January 2026:
+"I conducted a search of the USPTO Trademark Electronic Search System (TESS) in January 2026 for 'Olive & Thyme' in International Class 43 (restaurant services) and Class 29/30 (food products). I did not find any identical registered marks for restaurant services. There are several marks containing 'Olive' or 'Thyme' individually but none identical to our full name 'Olive & Thyme' in the restaurant category.
+
+We have been using 'Olive & Thyme' as our business name continuously since March 2022 and believe we have established common-law trademark rights in the Austin, Texas area based on continuous use.
+
+No formal trademark application has been filed with the USPTO. I have not consulted a trademark attorney.
+
+Note: There is a bakery called 'Olive & Thyme' in Burbank, California that has been operating since 2013. They appear to hold common-law rights in the Los Angeles area but I could not find a federal registration for restaurant services. This may limit our ability to expand the brand nationally but does not affect our local Austin operations."
+
+**Notable issues for reviewer:** (1) No federal trademark registration — brand is unprotected beyond common-law rights in Austin. (2) A same-name business exists in California — potential conflict if either party files for federal registration. (3) Self-conducted search, not by an attorney — may have missed relevant marks. (4) If acquiring the business, the buyer should file a federal trademark application immediately and budget approximately $2,000-3,000 for a proper trademark search and filing.
+
+### H. Customer & Market (1 document)
+
+**H-62: Market Positioning Memo (Seller-Prepared)**
+Prepared by Maria Konstantinou, February 2026.
+
+"OLIVE & THYME — MARKET POSITION
+
+Location: 1847 South Congress Avenue is in the heart of Austin's premier dining and retail corridor. South Congress ('SoCo') is a top-5 tourist destination in Austin and a high-traffic local dining area.
+
+Demographics (3-mile radius): Population 89,000 (growing 3.2%/year per City of Austin data). Median household income: $95,000 (vs. Austin median $78,000). Age distribution skews 25-45 — our target demographic. High density of tech workers, professionals, and creatives.
+
+Foot traffic: CoStar data shows approximately 18,000 daily pedestrians on South Congress between Elizabeth St and Monroe St. Weekend foot traffic peaks at 25,000+.
+
+Competition: 12 full-service restaurants within 0.5 miles. Three serve Mediterranean/Greek cuisine:
+- Opa! (0.3 miles) — casual Greek, counter service, avg check $18. Not a direct competitor (different price point and format).
+- Pita Wheel (0.4 miles) — fast-casual Mediterranean wraps/bowls, avg check $14. Not a direct competitor.
+- Mediterranean Chef (0.2 miles) — casual sit-down, avg check $28. Closest competitor but lower price point and less refined menu.
+
+Olive & Thyme occupies the 'upscale casual Mediterranean' niche — sit-down dinner with wine program, $52 average check. No direct competitor at this price point and quality level within 1 mile.
+
+Strengths: (1) Unique positioning in a high-traffic area. (2) Strong wine program with Mediterranean focus. (3) Chef Dimitri's menu is distinctive and well-reviewed. (4) Patio dining on South Congress is a significant draw. (5) Growing brand recognition via Google reviews and Instagram.
+
+Growth opportunities: (1) Corporate catering — Austin's tech companies have significant catering budgets. Currently 5% of revenue, target 10%+. (2) Private events — restaurant can accommodate groups up to 30 by reconfiguring dining room. Not currently marketed. (3) Brunch expansion — currently Saturday-Sunday only, could add Friday brunch. (4) Menu price increase — current prices are 10-15% below comparable upscale restaurants in Austin (Launderette avg check $65, Lenoir avg check $70).
+
+Parking: Limited street parking on South Congress. Shared parking lot with adjacent retail (20 spaces, included in lease). Valet not currently offered. This is the #1 complaint in negative reviews but is a location characteristic, not an operational issue.
+
+Seasonality: Revenue dips slightly in July-August (Austin heat, fewer tourists). Peaks in March (SXSW), October-November (fall tourist season), and December (holidays). The Q3 2024 dip was exacerbated by TxDOT road construction on South Congress (project completed September 2024, will not recur)."
+
+---
+
+## DD CHECKLIST (42 items across 6 dimensions)
+
+The checklist that all 3 models independently assess. Each model must review ALL 62 documents and rate each of the 42 items.
+
+### I. Financial Health (10 items)
+1. Revenue trend — growing, flat, or declining over 3 years?
+2. Gross margin consistency — is food cost (COGS %) stable or volatile?
+3. EBITDA margins — are they in line with restaurant industry norms (8-15%)?
+4. Working capital adequacy — can the business meet short-term obligations?
+5. Revenue concentration — is any single channel >50% of revenue? Any concerning channel trends?
+6. Cash flow vs. reported profit — any significant divergence? Any unusual cash movements?
+7. Debt-to-equity ratio — is leverage reasonable?
+8. Tax compliance — any outstanding tax liabilities, disputes, or audit risk?
+9. Intercompany / related party transactions — any non-arm's length transfers or undisclosed arrangements?
+10. Quality of earnings — are there one-time items, owner add-backs, or adjustments that inflate/deflate reported earnings?
+
+### II. Legal & Compliance (8 items)
+11. Lease term and assignability — can the lease transfer to a buyer? What conditions?
+12. Lease remaining term — is 6 years sufficient to justify the acquisition and recoup investment?
+13. Health inspection history — any critical violations or patterns of non-compliance?
+14. Liquor license transferability — any restrictions or risks to transfer?
+15. Pending or threatened litigation — any current or potential material legal exposure?
+16. Regulatory fines or violations — any pattern of non-compliance across regulatory bodies?
+17. IP protection — is the brand name properly protected? Any conflicting marks?
+18. Insurance adequacy — are coverage types and limits appropriate for a restaurant of this size?
+
+### III. Operational Risk (8 items)
+19. Key person dependency — does the business critically depend on specific individuals (chef, owner)?
+20. Supplier concentration — is any single supplier responsible for >40% of inputs? Supply chain resilience?
+21. Equipment condition — are major items near end of life? What CAPEX is needed in next 12-24 months?
+22. Technology adequacy — is the POS/tech stack modern, reliable, and transferable?
+23. Delivery platform dependency — what % of revenue comes through third-party platforms? What is the margin impact of commissions?
+24. Menu pricing power — are prices competitive, above, or below comparable restaurants?
+25. Food safety systems — are HACCP or equivalent food safety procedures documented and followed?
+26. Deferred maintenance — any maintenance backlog or items being deferred?
+
+### IV. Employment & People (6 items)
+27. Staff turnover rate — is it above or below industry average (~75% annual for restaurants)?
+28. Key employee retention — are the head chef and GM contractually committed post-acquisition?
+29. Non-compete coverage — are key employees restricted from competing if they leave?
+30. Wage and hour compliance — any risks related to tipped employees, overtime, or classification?
+31. Benefits obligations — any unfunded liabilities, accrued PTO, or benefit commitments?
+32. Immigration / work permit compliance — are all authorizations current? Any renewal risks?
+
+### V. Market & Competitive Position (5 items)
+33. Customer review trajectory — are ratings and review volume trending up or down?
+34. Competitive landscape — how saturated is the local market? Any direct competitors at the same price point?
+35. Demographic and foot traffic trends — is the trade area growing, stable, or declining?
+36. Brand strength and protection — how strong is the brand beyond local recognition?
+37. Growth opportunities — is there a credible pipeline for revenue expansion (catering, events, brunch, pricing)?
+
+### VI. Transaction-Specific (5 items)
+38. Seller motivation — why are they selling? Any red flags in the stated reasons?
+39. Valuation basis — is $850K (~6.4x EBITDA) reasonable for a single-location restaurant?
+40. Transition plan — will the seller/key employees stay for a handover? How long?
+41. Change of control provisions — which contracts require consent, notification, or re-execution upon sale?
+42. Post-acquisition investment needs — what immediate and medium-term CAPEX is required?
+
+---
+
+## MODEL PROMPTS
+
+Use three different AI models available on Replit. Each receives ALL 62 documents and the full 42-item checklist. They must review independently — no model sees another model's output.
+
+### Analyst Alpha (Conservative / Risk-Focused)
+System prompt:
+```
+You are a conservative due diligence analyst retained by the buyer. Your primary obligation is to protect the buyer from hidden risks. You are naturally cautious — you would rather flag a non-issue than miss a real one.
+
+For each of the 42 checklist items below, review ALL provided documents and produce:
+- Rating: GREEN (no concern), AMBER (needs clarification or presents minor risk), RED (material concern requiring immediate attention before closing)
+- Confidence: 1-10 (how certain are you of this rating given the evidence available?)
+- Rationale: 2-3 sentences citing specific documents, numbers, and page references.
+
+Rules:
+- If a document you would normally expect is missing, rate the item AMBER and note the gap.
+- If two documents contradict each other, rate RED and quote both.
+- Err on the side of caution. A false alarm is better than a missed risk.
+- Do not assume favorable interpretations of ambiguous information.
+```
+
+### Analyst Beta (Balanced / Commercial)
+System prompt:
+```
+You are a balanced due diligence analyst with strong commercial judgment. You assess risks in context — considering industry norms, the target's stage of development, and the overall deal thesis.
+
+For each of the 42 checklist items below, review ALL provided documents and produce:
+- Rating: GREEN (no concern), AMBER (needs clarification or minor risk), RED (material concern)
+- Confidence: 1-10
+- Rationale: 2-3 sentences citing specific documents and numbers.
+
+Rules:
+- Consider whether flagged items are unusual for a 3-year-old independent restaurant, or actually normal for the industry.
+- Balance risk identification with commercial reality — not every imperfection is a deal issue.
+- Flag genuinely material items clearly. Don't dilute real concerns with noise.
+- If information is missing, note it but consider whether it's reasonably expected at this stage.
+```
+
+### Analyst Gamma (Deal-Oriented / Opportunity-Focused)
+System prompt:
+```
+You are a deal-oriented analyst who focuses on value creation. You flag genuine risks but contextualize them as solvable problems with identifiable costs, not deal-breakers.
+
+For each of the 42 checklist items below, review ALL provided documents and produce:
+- Rating: GREEN (no concern), AMBER (manageable concern with a clear mitigation path), RED (material risk that could fundamentally change the deal thesis)
+- Confidence: 1-10
+- Rationale: 2-3 sentences citing specific documents and numbers.
+
+Rules:
+- Only rate RED for items that could genuinely make this a bad investment, not just items that need negotiation.
+- For AMBER items, briefly note what mitigation or negotiation step would address the concern.
+- Consider the upside: where do the documents reveal untapped value or growth potential?
+- Don't dismiss risks, but put them in context of the overall investment thesis.
+```
+
+---
+
+## COORDINATOR PROMPT (generates the Steering Report)
+
+After all 3 models have independently assessed all 42 items, the coordinator receives all three outputs and generates the steering report.
+
+```
+You are the review coordinator. You have received independent assessments from three analysts (Alpha, Beta, Gamma) who each reviewed 62 documents against a 42-item due diligence checklist.
+
+Your job is to compare their assessments and generate a HUMAN-IN-THE-LOOP STEERING REPORT.
+
+The purpose of this report is NOT to do the due diligence — it is to tell human reviewers WHERE TO FOCUS and at WHAT SENIORITY LEVEL. The system steers human review; it does not replace it.
+
+For each checklist item, determine the agreement level:
+- FULL CONSENSUS (3/3 same rating): High confidence. Route to: Staff-level sign-off (cursory check).
+- MAJORITY (2/3 agree, 1 dissents): Moderate confidence. Route to: Senior Associate for targeted review of the dissenting analyst's rationale. Include: what the dissenter found, why they disagree, and exactly what the human should verify.
+- SPLIT (no majority, or significant rating spread — e.g., one GREEN, one RED): Low confidence. Route to: Manager or Partner for substantive review. Include: each analyst's position, the specific documents in tension, and a recommended investigation path.
+- ESCALATION (any item rated RED by 2+ analysts): Route to: Partner + Risk Management. Include: full analysis from all three, recommended next steps, and potential deal impact.
+
+For each routed item, provide:
+1. The checklist question
+2. Brief summary of each analyst's finding (1-2 lines each, with their rating)
+3. WHY they disagreed (the key insight — this is the most valuable part)
+4. ROUTE TO: [Staff / Senior Associate / Manager / Partner / Partner + Risk]
+5. SPECIFIC FOCUS: A precise instruction for the human reviewer — not "review this" but "compare the intercompany schedule (B-27) statement that 'no staff are paid' against the 2025 meeting minutes (A-09) where Maria mentions 'sometimes uses restaurant staff' — determine which is accurate and quantify any unreimbursed staff costs"
+6. ESTIMATED TIME: realistic estimate in minutes
+7. RELEVANT DOCUMENTS: list with document IDs
+
+Structure the report as:
+1. Executive Summary (headline numbers: consensus vs. disagreement items, overall risk level)
+2. Priority Review Items (sorted by routing level: Partner first, then Manager, then Senior, then Staff)
+3. Consensus Findings (grouped GREEN and AMBER — brief, for reference)
+4. Information Gaps (documents or data the analysts expected but didn't find)
+5. Opportunities (items where analysts identified upside — growth, negotiation leverage, value creation)
+```
+
+---
+
+## DESIGN
+
+Inspired by DocuSign's aesthetic — clean, trustworthy, modern-professional. Not a startup dashboard, not a law firm memo. Think: enterprise SaaS that handles serious documents.
+
+- **Color palette:** White (#ffffff) background. Light gray (#f7f7f7) for sections/cards. Dark charcoal (#333333) for text. Primary accent: a warm gold/yellow (#FFC72C) similar to DocuSign's signature yellow — used for the top bar, primary buttons, and key highlights. Secondary: dark navy (#1B2A4A) for headers and sidebar.
+- **Rating colors:** Green (#22c55e), Amber (#f59e0b), Red (#ef4444) — used ONLY for checklist ratings, not as general UI decoration.
+- **Typography:** Clean sans-serif (Inter, Helvetica Neue, or system). No serif fonts. Consistent weight hierarchy: bold for headings, regular for body, light for secondary text.
+- **Layout:** Full-width top navigation bar (dark navy or white with gold accent line). No sidebar on the landing page. Sidebar only appears on the Data Room and Checklists pages for folder/section navigation.
+- **Top bar:** Gold/yellow accent stripe at the very top (thin, 4px). Below it: "Human-in-the-Loop Guidance System" in dark navy, left-aligned. "Olive & Thyme — Simulated Data Room" right-aligned, small, gray.
+- **Buttons:** Rounded corners (8px), gold/yellow background (#FFC72C) with dark text for primary actions. White background with dark border for secondary actions. Subtle hover state (darken 10%).
+- **Cards/sections:** White cards with very subtle border (#e5e5e5) and minimal shadow (0 2px 4px rgba(0,0,0,0.05)). Clean separation between sections.
+- **The Steering Report** should feel like a professional document you'd trust — clean typography, good spacing, clear hierarchy. Not flashy. Trustworthy.
+- **Progress animation:** Simple, DocuSign-style progress steps with checkmarks appearing as each model completes. Gold checkmarks.
+- **No heavy animations, no gradients, no 3D effects.** Flat, clean, professional.
+
+---
+
+## CRITICAL IMPLEMENTATION NOTES
+
+1. **Document persistence:** All 62 documents must be stored as static data in the source code (JSON files, JS objects, or similar). They must be accessible after the app is published/deployed on Replit. Do NOT generate them at runtime or store them in a database that resets.
+
+2. **Model independence:** The three analyst prompts must be sent as separate, independent API calls. No model should receive or be influenced by another model's output. The coordinator is the only function that sees all three outputs.
+
+3. **Consistency:** All numbers, dates, names, and facts across the 62 documents must be internally consistent with the core facts and yellow flags specified above.
+
+4. **The Steering Report is the hero.** The data room and analysis are the setup. The steering report is the payoff. It should be the most polished, most readable, most professional-looking page in the app.
+
+5. **PDF download:** The steering report must be downloadable as a PDF that looks good printed. Use a print-friendly stylesheet.
+
+6. **Yellow flag design:** The 10 yellow flags are specifically designed to create model disagreement. A conservative analyst should rate some of them RED while an aggressive analyst rates the same item GREEN. This disagreement IS the product — it's what makes the steering report valuable.
