@@ -8,23 +8,23 @@ import { toast } from "sonner";
 
 const MODEL_CARDS = [
   {
-    label: "Model A",
-    model: "gpt-5.2",
+    label: "GPT-5.2",
     provider: "OpenAI",
+    dotColor: "#60a5fa",
     color: "border-blue-200 bg-blue-50",
     badgeColor: "bg-blue-100 text-blue-800",
   },
   {
-    label: "Model B",
-    model: "claude-sonnet-4-6",
+    label: "Claude Sonnet 4.6",
     provider: "Anthropic",
+    dotColor: "#fb923c",
     color: "border-orange-200 bg-orange-50",
     badgeColor: "bg-orange-100 text-orange-800",
   },
   {
-    label: "Model C",
-    model: "gemini-2.5-pro",
+    label: "Gemini 2.5 Pro",
     provider: "Google",
+    dotColor: "#4ade80",
     color: "border-green-200 bg-green-50",
     badgeColor: "bg-green-100 text-green-800",
   },
@@ -32,10 +32,10 @@ const MODEL_CARDS = [
 
 const STEPS = [
   { label: "Load all 62 data room documents" },
-  { label: "Model A (GPT-5.2) — reviews all 42 checklist items" },
-  { label: "Model B (claude-sonnet-4-6) — reviews all 42 checklist items" },
-  { label: "Model C (gemini-2.5-pro) — reviews all 42 checklist items" },
-  { label: "Aggregate ratings, majority-vote consensus, route to reviewers" },
+  { label: "GPT-5.2 — rates all 42 checklist items LOW / MEDIUM / HIGH RISK" },
+  { label: "Claude Sonnet 4.6 — rates all 42 checklist items LOW / MEDIUM / HIGH RISK" },
+  { label: "Gemini 2.5 Pro — rates all 42 checklist items LOW / MEDIUM / HIGH RISK" },
+  { label: "Apply routing matrix: CLEAR / CHECK / REVIEW / ESCALATE based on agreement + severity" },
   { label: "Generate Steering Report" },
 ];
 
@@ -123,20 +123,23 @@ export default function AnalysisPage() {
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Single system prompt — sent to all three models identically</p>
           <p className="text-slate-700 italic">
             "You are a due diligence analyst. For each of the 42 checklist items, review all provided documents and return a JSON array.
-            Each item must have: itemNumber (integer), rating (exactly one of: GREEN, AMBER, RED), confidence (integer 1-10), rationale
-            (2-3 sentences citing specific documents and numbers). If information is missing, rate AMBER. If two documents contradict
-            each other, rate RED and cite both. Return ONLY valid JSON, no other text."
+            Each item must have: itemNumber (integer), rating (exactly one of: LOW RISK, MEDIUM RISK, HIGH RISK), confidence (integer 1-10), rationale
+            (2-3 sentences citing specific documents and numbers). If information is missing, rate MEDIUM RISK. If two documents contradict
+            each other, rate HIGH RISK and cite both. Return ONLY valid JSON, no other text."
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           {MODEL_CARDS.map((m) => (
             <div key={m.label} className={cn("rounded-xl border p-5", m.color)}>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">{m.label}</p>
-              <p className={cn("text-sm font-mono font-bold px-2 py-1 rounded inline-block mb-1", m.badgeColor)}>
-                {m.model}
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: m.dotColor }} />
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{m.provider}</p>
+              </div>
+              <p className={cn("text-sm font-bold px-2 py-1 rounded inline-block mb-1", m.badgeColor)}>
+                {m.label}
               </p>
-              <p className="text-xs text-slate-500">{m.provider}</p>
+              <p className="text-xs text-slate-500 mt-1">Rates: LOW RISK · MEDIUM RISK · HIGH RISK</p>
             </div>
           ))}
         </div>

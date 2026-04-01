@@ -96,18 +96,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <p className="text-blue-200 text-xs font-medium">AI Models</p>
             <div className="mt-2 space-y-1.5">
               {[
-                { label: "Model A", model: "gpt-5.2",           color: "#60a5fa" },
-                { label: "Model B", model: "claude-sonnet-4-6", color: "#fb923c" },
-                { label: "Model C", model: "gemini-2.5-pro",    color: "#4ade80" },
+                { label: "GPT-5.2",           color: "#60a5fa" },
+                { label: "Claude Sonnet 4.6",  color: "#fb923c" },
+                { label: "Gemini 2.5 Pro",     color: "#4ade80" },
               ].map((m) => (
                 <div key={m.label} className="flex items-center gap-2">
-                  <div
-                    className="w-2 h-2 rounded-full shrink-0"
-                    style={{ backgroundColor: m.color }}
-                  />
-                  <span className="text-blue-300 text-xs font-mono">
-                    {m.model}
-                  </span>
+                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: m.color }} />
+                  <span className="text-blue-300 text-xs">{m.label}</span>
                 </div>
               ))}
             </div>

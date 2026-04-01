@@ -5,11 +5,12 @@ import { documents } from "../data/documents.js";
 import { checklist } from "../data/checklist.js";
 import { models, SYSTEM_PROMPT, buildDocumentContext, buildUserPrompt } from "./promptTemplates.js";
 
-export type Routing = "CONSENSUS" | "MAJORITY" | "SPLIT";
+export type Routing = "CLEAR" | "CHECK" | "REVIEW" | "ESCALATE";
+export type ModelRating = "LOW RISK" | "MEDIUM RISK" | "HIGH RISK";
 
 export interface ModelFinding {
   analyst: string;
-  rating: "GREEN" | "AMBER" | "RED";
+  rating: ModelRating;
   summary: string;
   confidence: number;
 }
@@ -19,7 +20,7 @@ export interface ReviewItem {
   question: string;
   findings: ModelFinding[];
   routing: Routing;
-  agreementSummary: string;
+  routingRationale: string;
   routeTo: string;
   focusOn: string;
   estimatedMinutes: number;
@@ -33,9 +34,10 @@ export interface InformationGap {
 }
 
 export interface ExecutiveSummary {
-  consensusCount: number;
-  majorityCount: number;
-  splitCount: number;
+  clearCount: number;
+  checkCount: number;
+  reviewCount: number;
+  escalateCount: number;
   overallRisk: "LOW" | "MODERATE" | "ELEVATED";
 }
 
@@ -100,11 +102,11 @@ const REVIEWER_ROUTING: Record<number, { routeTo: string; focusOn: string; estim
   42: { routeTo: "Financial Analyst + Operations Specialist", focusOn: "Total CAPEX: $19-26K near-term + $28-42K medium-term = up to $68K (E-49, C-31, B-22)", estimatedMinutes: 30 }
 };
 
-function normalizeRating(raw: string): "GREEN" | "AMBER" | "RED" {
+function normalizeRating(raw: string): ModelRating {
   const upper = (raw ?? "").toUpperCase().trim();
-  if (upper === "GREEN") return "GREEN";
-  if (upper === "RED") return "RED";
-  return "AMBER";
+  if (upper === "LOW RISK")  return "LOW RISK";
+  if (upper === "HIGH RISK") return "HIGH RISK";
+  return "MEDIUM RISK";
 }
 
 function parseFindings(rawContent: string, modelLabel: string): RawFinding[] {
@@ -153,49 +155,61 @@ function parseFindings(rawContent: string, modelLabel: string): RawFinding[] {
   }
 }
 
-function ratingLabel(r: string): string {
-  if (r === "GREEN") return "Green";
-  if (r === "RED")   return "Red";
-  return "Amber";
-}
+// Routing matrix: considers BOTH agreement level AND severity.
+// See architecture spec for full decision table.
+function determineRouting(findings: ModelFinding[]): { routing: Routing; routingRationale: string } {
+  const lowCount  = findings.filter(f => f.rating === "LOW RISK").length;
+  const medCount  = findings.filter(f => f.rating === "MEDIUM RISK").length;
+  const highCount = findings.filter(f => f.rating === "HIGH RISK").length;
 
-// Routing is purely about model AGREEMENT, not about which rating was given.
-function determineRouting(findings: ModelFinding[]): { routing: Routing; agreementSummary: string } {
-  const ratings = findings.map(f => f.rating);
-  const counts: Record<string, number> = {};
-  for (const r of ratings) counts[r] = (counts[r] ?? 0) + 1;
+  const highModels  = findings.filter(f => f.rating === "HIGH RISK").map(f => f.analyst);
+  const medModels   = findings.filter(f => f.rating === "MEDIUM RISK").map(f => f.analyst);
+  const lowModels   = findings.filter(f => f.rating === "LOW RISK").map(f => f.analyst);
 
-  // All 3 agree
-  if (Object.keys(counts).length === 1) {
-    return {
-      routing: "CONSENSUS",
-      agreementSummary: `All 3 models agree: rated ${ratingLabel(ratings[0])}`,
-    };
+  // ── CLEAR ────────────────────────────────────────────────────────────────
+  if (lowCount === 3) {
+    return { routing: "CLEAR", routingRationale: "All 3 models rated LOW RISK — no concerns identified" };
+  }
+  if (lowCount === 2 && medCount === 1) {
+    return { routing: "CLEAR", routingRationale: `2 models rated LOW RISK, ${medModels[0]} rated MEDIUM RISK — minor flag, cursory check only` };
   }
 
-  // 2 of 3 agree (majority)
-  const majorityEntry = Object.entries(counts).find(([, c]) => c >= 2);
-  if (majorityEntry) {
-    const [majorRating] = majorityEntry;
-    const dissentEntry  = Object.entries(counts).find(([r]) => r !== majorRating);
-    const [dissentRating] = dissentEntry ?? ["AMBER"];
-    const dissentModel = findings.find(f => f.rating === dissentRating)?.analyst ?? "one model";
-    return {
-      routing: "MAJORITY",
-      agreementSummary: `2 of 3 models rated ${ratingLabel(majorRating)} · ${dissentModel} dissented with ${ratingLabel(dissentRating)} — check dissenting reasoning`,
-    };
+  // ── CHECK ────────────────────────────────────────────────────────────────
+  if (medCount === 3) {
+    return { routing: "CHECK", routingRationale: "All 3 models rated MEDIUM RISK — consistent moderate concern, targeted review needed" };
+  }
+  if (medCount === 2 && lowCount === 1) {
+    return { routing: "CHECK", routingRationale: `2 models rated MEDIUM RISK, ${lowModels[0]} rated LOW RISK — moderate concern, senior associate review recommended` };
   }
 
-  // All three different — 3-way split
-  const parts = findings.map(f => `${f.analyst}: ${ratingLabel(f.rating)}`).join(" · ");
-  return {
-    routing: "SPLIT",
-    agreementSummary: `No consensus — ${parts}`,
-  };
+  // ── REVIEW ───────────────────────────────────────────────────────────────
+  if (medCount === 2 && highCount === 1) {
+    return { routing: "REVIEW", routingRationale: `2 models rated MEDIUM RISK, ${highModels[0]} rated HIGH RISK — mixed signals, manager substantive review needed` };
+  }
+  if (lowCount === 2 && highCount === 1) {
+    return { routing: "REVIEW", routingRationale: `2 models rated LOW RISK, ${highModels[0]} rated HIGH RISK — disagreement on materiality, review required` };
+  }
+
+  // ── ESCALATE ─────────────────────────────────────────────────────────────
+  if (highCount === 3) {
+    return { routing: "ESCALATE", routingRationale: "All 3 models rated HIGH RISK — consensus that this is material, partner review required" };
+  }
+  if (highCount === 2 && medCount === 1) {
+    return { routing: "ESCALATE", routingRationale: `2 models rated HIGH RISK, ${medModels[0]} rated MEDIUM RISK — mostly high concern, partner review required` };
+  }
+  if (highCount === 2 && lowCount === 1) {
+    return { routing: "ESCALATE", routingRationale: `2 models rated HIGH RISK, ${lowModels[0]} rated LOW RISK — significant conflict with high majority, escalate` };
+  }
+  if (lowCount === 1 && medCount === 1 && highCount === 1) {
+    return { routing: "ESCALATE", routingRationale: `Full split — ${lowModels[0]} LOW RISK · ${medModels[0]} MEDIUM RISK · ${highModels[0]} HIGH RISK — human determination required` };
+  }
+
+  // Fallback (should not occur with 3 models)
+  return { routing: "REVIEW", routingRationale: "Inconclusive model ratings — manual review required" };
 }
 
 function computePriority(item: ReviewItem): number {
-  const routingScore: Record<Routing, number> = { SPLIT: 3, MAJORITY: 2, CONSENSUS: 1 };
+  const routingScore: Record<Routing, number> = { ESCALATE: 4, REVIEW: 3, CHECK: 2, CLEAR: 1 };
   const base = routingScore[item.routing] ?? 0;
   const avgConfidence = item.findings.reduce((a, b) => a + b.confidence, 0) / item.findings.length;
   return Math.round(base * 10 + (10 - avgConfidence));
@@ -284,25 +298,25 @@ export async function runFullAnalysis(): Promise<SteeringReport> {
     const findings: ModelFinding[] = [
       {
         analyst: models[0].label,
-        rating: normalizeRating(aRaw?.rating ?? "AMBER"),
+        rating: normalizeRating(aRaw?.rating ?? "MEDIUM RISK"),
         confidence: aRaw?.confidence ?? 5,
         summary: aRaw?.rationale ?? "Response not available.",
       },
       {
         analyst: models[1].label,
-        rating: normalizeRating(bRaw?.rating ?? "AMBER"),
+        rating: normalizeRating(bRaw?.rating ?? "MEDIUM RISK"),
         confidence: bRaw?.confidence ?? 5,
         summary: bRaw?.rationale ?? "Response not available.",
       },
       {
         analyst: models[2].label,
-        rating: normalizeRating(cRaw?.rating ?? "AMBER"),
+        rating: normalizeRating(cRaw?.rating ?? "MEDIUM RISK"),
         confidence: cRaw?.confidence ?? 5,
         summary: cRaw?.rationale ?? "Response not available.",
       },
     ];
 
-    const { routing, agreementSummary } = determineRouting(findings);
+    const { routing, routingRationale } = determineRouting(findings);
     const reviewerRouting = REVIEWER_ROUTING[id] ?? {
       routeTo: "Senior Deal Partner",
       focusOn: "Review relevant documents",
@@ -315,7 +329,7 @@ export async function runFullAnalysis(): Promise<SteeringReport> {
       question: checklistItem.question,
       findings,
       routing,
-      agreementSummary,
+      routingRationale,
       routeTo: reviewerRouting.routeTo,
       focusOn: reviewerRouting.focusOn,
       estimatedMinutes: reviewerRouting.estimatedMinutes,
@@ -326,18 +340,20 @@ export async function runFullAnalysis(): Promise<SteeringReport> {
     return item;
   });
 
+  // Sort: ESCALATE → REVIEW → CHECK → CLEAR (highest urgency first)
   reviewItems.sort((a, b) => b.priority - a.priority);
 
-  const priorityItems  = reviewItems.filter(i => i.routing === "SPLIT");
-  const consensusItems = reviewItems.filter(i => i.routing !== "SPLIT");
+  const priorityItems  = reviewItems.filter(i => i.routing === "ESCALATE" || i.routing === "REVIEW");
+  const consensusItems = reviewItems.filter(i => i.routing === "CLEAR" || i.routing === "CHECK");
 
-  const consensusCount = reviewItems.filter(i => i.routing === "CONSENSUS").length;
-  const majorityCount  = reviewItems.filter(i => i.routing === "MAJORITY").length;
-  const splitCount     = reviewItems.filter(i => i.routing === "SPLIT").length;
+  const clearCount    = reviewItems.filter(i => i.routing === "CLEAR").length;
+  const checkCount    = reviewItems.filter(i => i.routing === "CHECK").length;
+  const reviewCount   = reviewItems.filter(i => i.routing === "REVIEW").length;
+  const escalateCount = reviewItems.filter(i => i.routing === "ESCALATE").length;
 
   let overallRisk: "LOW" | "MODERATE" | "ELEVATED" = "LOW";
-  if (splitCount >= 5) overallRisk = "ELEVATED";
-  else if (splitCount >= 2 || majorityCount >= 10) overallRisk = "MODERATE";
+  if (escalateCount >= 5) overallRisk = "ELEVATED";
+  else if (escalateCount >= 2 || reviewCount >= 5) overallRisk = "MODERATE";
 
   const informationGaps: InformationGap[] = [
     {
@@ -364,7 +380,7 @@ export async function runFullAnalysis(): Promise<SteeringReport> {
 
   return {
     generatedAt: new Date().toISOString(),
-    executiveSummary: { consensusCount, majorityCount, splitCount, overallRisk },
+    executiveSummary: { clearCount, checkCount, reviewCount, escalateCount, overallRisk },
     priorityItems,
     consensusItems,
     informationGaps,

@@ -110,11 +110,12 @@ export default function DashboardPage() {
                 View Report <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-3">
               {[
-                { label: "Consensus", sub: "all 3 models agree",   count: report.executiveSummary.consensusCount, bg: "#1B2A4A", fg: "#ffffff" },
-                { label: "Majority",  sub: "2 of 3 models agree",  count: report.executiveSummary.majorityCount,  bg: "#FFC72C", fg: "#1B2A4A" },
-                { label: "Split",     sub: "no consensus",          count: report.executiveSummary.splitCount,     bg: "#E8614D", fg: "#ffffff" },
+                { label: "CLEAR",    sub: "no action needed",        count: report.executiveSummary.clearCount,    bg: "#1B2A4A", fg: "#ffffff" },
+                { label: "CHECK",    sub: "targeted review needed",   count: report.executiveSummary.checkCount,    bg: "#FFC72C", fg: "#1B2A4A" },
+                { label: "REVIEW",   sub: "substantive review",       count: report.executiveSummary.reviewCount,   bg: "#E88B3A", fg: "#ffffff" },
+                { label: "ESCALATE", sub: "partner attention",        count: report.executiveSummary.escalateCount, bg: "#E8614D", fg: "#ffffff" },
               ].map((s) => (
                 <div key={s.label} className="rounded-lg border p-3 text-center" style={{ backgroundColor: s.bg, borderColor: s.bg }}>
                   <p className="text-2xl font-bold" style={{ color: s.fg }}>{s.count}</p>
@@ -126,13 +127,13 @@ export default function DashboardPage() {
             <div className="mt-3 flex items-center gap-2">
               <Scale className="w-4 h-4 text-slate-400" />
               <span className="text-sm text-slate-600">
-                Agreement level:{" "}
+                Deal risk level:{" "}
                 <span className={cn("font-semibold", {
                   "text-green-700": report.executiveSummary.overallRisk === "LOW",
                   "text-amber-700": report.executiveSummary.overallRisk === "MODERATE",
                   "text-red-700": report.executiveSummary.overallRisk === "ELEVATED",
                 })}>
-                  {report.executiveSummary.overallRisk === "LOW" ? "High" : report.executiveSummary.overallRisk === "MODERATE" ? "Mixed" : "Low"}
+                  {report.executiveSummary.overallRisk}
                 </span>
               </span>
             </div>

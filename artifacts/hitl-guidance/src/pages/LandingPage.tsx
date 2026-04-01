@@ -23,9 +23,8 @@ export default function LandingPage() {
         <h1 className="text-4xl font-bold text-white tracking-tight leading-tight">
           Human-in-the-Loop<br />Guidance System
         </h1>
-        <p className="mt-4 text-lg" style={{ color: "#7fa8c9" }}>
-          Multi-model AI review triage for M&amp;A due diligence —<br />
-          three independent analysts, one steering report, you decide.
+        <p className="mt-4 text-base leading-relaxed max-w-lg" style={{ color: "#7fa8c9" }}>
+          Three AI models read every document. Where they disagree — and what they agree is risky — is where your team should focus.
         </p>
 
         <div className="mt-12 flex flex-col gap-4 w-full">
@@ -97,11 +96,11 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-3">
               {[
-                "Runs three independent AI analysts with distinct risk personas",
-                "Routes each of 42 checklist items: Cleared / Review / Escalate / Priority",
-                "Surfaces disagreement between analysts for human adjudication",
-                "Routes each item to the right specialist reviewer",
-                "Identifies information gaps requiring follow-up",
+                "Runs three different AI models on the exact same prompt and documents",
+                "Routes each of 42 checklist items: CLEAR / CHECK / REVIEW / ESCALATE",
+                "Routing considers both model agreement AND severity level",
+                "Makes model disagreement visible — the human decides, not the system",
+                "Identifies information gaps the models expected but didn't find",
               ].map((item) => (
                 <div key={item} className="flex items-start gap-2.5">
                   <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0" style={{ color: "#22c55e" }} />

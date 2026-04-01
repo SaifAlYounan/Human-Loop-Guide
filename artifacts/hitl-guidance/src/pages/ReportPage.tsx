@@ -4,25 +4,23 @@ import {
   FileBarChart2,
   AlertTriangle,
   CheckCircle2,
-  Minus,
   Users,
   ChevronDown,
   ChevronUp,
   Clock,
   AlertCircle,
-  GitMerge,
   Brain,
   Filter,
+  ShieldCheck,
+  Eye,
+  Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
 
-type Routing = "CONSENSUS" | "MAJORITY" | "SPLIT";
-type ModelRating = "GREEN" | "AMBER" | "RED";
-type ActiveFilter = Routing | "ALL";
+type Routing = "CLEAR" | "CHECK" | "REVIEW" | "ESCALATE";
+type ActiveFilter = Routing | "ALL" | "GAPS";
 
-// ── Layer 1: Routing badges ─────────────────────────────────────────────────
-// Based purely on model AGREEMENT, not on which rating was given.
 const ROUTING_CONFIG: Record<Routing, {
   label: string;
   sublabel: string;
@@ -31,60 +29,57 @@ const ROUTING_CONFIG: Record<Routing, {
   badgeText: string;
   cardBg: string;
   cardBorder: string;
-  ringColor: string;
 }> = {
-  CONSENSUS: {
-    label: "Consensus",
-    sublabel: "all 3 models agree",
+  CLEAR: {
+    label: "CLEAR",
+    sublabel: "no action needed",
     icon: CheckCircle2,
     badgeBg: "#1B2A4A",
     badgeText: "#ffffff",
     cardBg: "bg-slate-50",
     cardBorder: "border-slate-200",
-    ringColor: "#1B2A4A",
   },
-  MAJORITY: {
-    label: "Majority",
-    sublabel: "2 of 3 models agree",
-    icon: GitMerge,
+  CHECK: {
+    label: "CHECK",
+    sublabel: "targeted review needed",
+    icon: Search,
     badgeBg: "#FFC72C",
     badgeText: "#1B2A4A",
     cardBg: "bg-amber-50",
     cardBorder: "border-amber-200",
-    ringColor: "#FFC72C",
   },
-  SPLIT: {
-    label: "Split",
-    sublabel: "no consensus — priority review",
+  REVIEW: {
+    label: "REVIEW",
+    sublabel: "substantive review required",
+    icon: Eye,
+    badgeBg: "#E88B3A",
+    badgeText: "#ffffff",
+    cardBg: "bg-orange-50",
+    cardBorder: "border-orange-200",
+  },
+  ESCALATE: {
+    label: "ESCALATE",
+    sublabel: "partner attention required",
     icon: AlertTriangle,
     badgeBg: "#E8614D",
     badgeText: "#ffffff",
     cardBg: "bg-red-50",
     cardBorder: "border-red-100",
-    ringColor: "#E8614D",
   },
 };
 
-// ── Layer 2: Individual model risk badges ───────────────────────────────────
-// Only appear in the expanded detail view. Green/Amber/Red = risk opinion.
-const MODEL_RATING_CONFIG: Record<ModelRating, { label: string; badge: string }> = {
-  GREEN: { label: "Green",  badge: "bg-green-100 text-green-800" },
-  AMBER: { label: "Amber",  badge: "bg-amber-100 text-amber-800" },
-  RED:   { label: "Red",    badge: "bg-red-100 text-red-800" },
-};
-
-const ANALYST_COLORS: Record<string, { dot: string }> = {
-  "Model A: GPT-5.2":           { dot: "bg-blue-400"   },
-  "Model B: claude-sonnet-4-6": { dot: "bg-orange-400" },
-  "Model C: gemini-2.5-pro":    { dot: "bg-green-400"  },
+const ANALYST_COLORS: Record<string, string> = {
+  "GPT-5.2":           "#60a5fa",
+  "Claude Sonnet 4.6": "#fb923c",
+  "Gemini 2.5 Pro":    "#4ade80",
 };
 
 function RoutingBadge({ routing }: { routing: Routing }) {
-  const cfg = ROUTING_CONFIG[routing];
+  const cfg = ROUTING_CONFIG[routing] ?? ROUTING_CONFIG.CLEAR;
   const Icon = cfg.icon;
   return (
     <span
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold shrink-0"
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold shrink-0 tracking-wide"
       style={{ backgroundColor: cfg.badgeBg, color: cfg.badgeText }}
     >
       <Icon className="w-3 h-3" />
@@ -93,30 +88,21 @@ function RoutingBadge({ routing }: { routing: Routing }) {
   );
 }
 
-function ModelRatingBadge({ rating }: { rating: string }) {
-  const cfg = MODEL_RATING_CONFIG[rating as ModelRating] ?? { label: rating, badge: "bg-slate-100 text-slate-700" };
-  return (
-    <span className={cn("px-2 py-0.5 rounded text-xs font-semibold", cfg.badge)}>
-      {cfg.label}
-    </span>
-  );
-}
-
 function ConfidenceBar({ value }: { value: number }) {
   const pct = Math.round((value / 10) * 100);
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-1.5 flex-1">
       <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
         <div
           className={cn("h-full rounded-full", {
             "bg-green-400": value >= 8,
             "bg-amber-400": value >= 5 && value < 8,
-            "bg-red-400": value < 5,
+            "bg-red-400":   value < 5,
           })}
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="text-xs text-slate-400 w-5 text-right">{value}/10</span>
+      <span className="text-xs text-slate-400 w-9 text-right shrink-0">{value}/10</span>
     </div>
   );
 }
@@ -124,12 +110,12 @@ function ConfidenceBar({ value }: { value: number }) {
 function ReviewItemCard({ item }: { item: any }) {
   const [expanded, setExpanded] = useState(false);
   const routing = item.routing as Routing;
-  const cfg = ROUTING_CONFIG[routing] ?? ROUTING_CONFIG.CONSENSUS;
+  const cfg = ROUTING_CONFIG[routing] ?? ROUTING_CONFIG.CLEAR;
 
   return (
     <div className={cn("rounded-xl border transition-all", cfg.cardBg, cfg.cardBorder)}>
       <div className="flex items-start gap-3 p-4">
-        <span className="text-xs font-mono text-slate-400 pt-0.5 w-5 shrink-0 text-center">
+        <span className="text-xs font-mono text-slate-400 pt-0.5 w-6 shrink-0 text-right">
           #{item.checklistId}
         </span>
 
@@ -141,8 +127,8 @@ function ReviewItemCard({ item }: { item: any }) {
             </p>
           </div>
 
-          <p className="text-xs text-slate-500 leading-snug mb-2">
-            {item.agreementSummary}
+          <p className="text-xs text-slate-500 leading-snug mb-2 italic">
+            {item.routingRationale}
           </p>
 
           <div className="flex items-center gap-4 text-xs text-slate-400 flex-wrap">
@@ -156,12 +142,12 @@ function ReviewItemCard({ item }: { item: any }) {
             </span>
             <div className="flex gap-1 flex-wrap">
               {item.relevantDocuments.slice(0, 4).map((d: string) => (
-                <span key={d} className="px-1.5 py-0.5 rounded font-mono bg-white border border-slate-200 text-slate-500">
+                <span key={d} className="px-1.5 py-0.5 rounded font-mono bg-white border border-slate-200 text-slate-500 text-xs">
                   {d}
                 </span>
               ))}
               {item.relevantDocuments.length > 4 && (
-                <span className="text-slate-400">+{item.relevantDocuments.length - 4}</span>
+                <span className="text-slate-400 text-xs">+{item.relevantDocuments.length - 4}</span>
               )}
             </div>
           </div>
@@ -180,31 +166,35 @@ function ReviewItemCard({ item }: { item: any }) {
 
       {expanded && (
         <div className="border-t border-slate-200 px-4 pb-4 pt-3 space-y-3">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Focus On</p>
-          <div className="p-3 rounded-lg bg-white border border-slate-200 text-xs text-slate-700 leading-relaxed">
-            {item.focusOn}
+          <div>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Focus On</p>
+            <div className="p-3 rounded-lg bg-white border border-slate-200 text-xs text-slate-700 leading-relaxed">
+              {item.focusOn}
+            </div>
           </div>
 
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-2">
-            Individual Model Assessments — Risk Opinion
-          </p>
-          <div className="space-y-2">
-            {item.findings.map((f: any) => {
-              const analystCfg = ANALYST_COLORS[f.analyst] ?? { dot: "bg-slate-400" };
-              return (
-                <div key={f.analyst} className="rounded-lg bg-white border border-slate-200 p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className={cn("w-2 h-2 rounded-full shrink-0", analystCfg.dot)} />
-                    <span className="text-xs font-semibold text-slate-700">{f.analyst}</span>
-                    <ModelRatingBadge rating={f.rating} />
-                    <div className="flex-1">
+          <div>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+              Individual Model Assessments
+            </p>
+            <div className="space-y-2">
+              {item.findings.map((f: any) => {
+                const dotColor = ANALYST_COLORS[f.analyst] ?? "#94a3b8";
+                return (
+                  <div key={f.analyst} className="rounded-lg bg-white border border-slate-200 p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: dotColor }} />
+                      <span className="text-xs font-semibold text-slate-700 shrink-0">{f.analyst}</span>
+                      <span className="text-xs text-slate-500 shrink-0 border border-slate-200 rounded px-1.5 py-0.5">
+                        {f.rating}
+                      </span>
                       <ConfidenceBar value={f.confidence} />
                     </div>
+                    <p className="text-xs text-slate-600 leading-relaxed">{f.summary}</p>
                   </div>
-                  <p className="text-xs text-slate-600 leading-relaxed">{f.summary}</p>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
@@ -215,7 +205,6 @@ function ReviewItemCard({ item }: { item: any }) {
 export default function ReportPage() {
   const { data: cachedData, isLoading } = useGetCachedReport();
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>("ALL");
-  const [activeTab, setActiveTab] = useState<"split" | "all" | "gaps">("split");
 
   const report = cachedData?.report;
 
@@ -244,13 +233,16 @@ export default function ReportPage() {
     );
   }
 
-  const summary    = report.executiveSummary;
-  const allItems   = report.allItems ?? [];
-  const splitItems = report.priorityItems ?? [];
-  const gaps       = report.informationGaps ?? [];
+  const summary  = report.executiveSummary;
+  const allItems = report.allItems ?? [];
+  const gaps     = report.informationGaps ?? [];
 
-  const filteredAll = activeFilter === "ALL"
+  const countFor = (r: Routing) => summary[`${r.toLowerCase()}Count` as keyof typeof summary] as number;
+
+  const filteredItems = activeFilter === "ALL"
     ? allItems
+    : activeFilter === "GAPS"
+    ? []
     : allItems.filter((i: any) => i.routing === activeFilter);
 
   const totalTime = allItems.reduce((s: number, i: any) => s + (i.estimatedMinutes ?? 0), 0);
@@ -259,6 +251,7 @@ export default function ReportPage() {
     <div className="p-8">
       <div className="max-w-6xl mx-auto">
 
+        {/* ── Header ───────────────────────────────────────────── */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-2">
             <FileBarChart2 className="w-5 h-5 text-slate-400" />
@@ -266,150 +259,120 @@ export default function ReportPage() {
           </div>
           <h1 className="text-2xl font-bold text-slate-900">M&A Due Diligence Steering Report</h1>
           <p className="text-slate-500 text-sm mt-1">
-            Olive & Thyme LLC · Generated {new Date(report.generatedAt).toLocaleString()}
+            Olive & Thyme LLC · Asking price $850K · Generated {new Date(report.generatedAt).toLocaleString()}
+          </p>
+          <p className="text-slate-400 text-xs mt-0.5">
+            3 models · 62 documents · 42 checklist items · {Math.round(totalTime / 60)}h estimated review time
           </p>
         </div>
 
-        {/* ── Routing summary tiles ────────────────────────────── */}
+        {/* ── 4 summary tiles ──────────────────────────────────── */}
         <div className="mb-2">
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
-            Routing Summary — based on model agreement
+            Routing Summary — click to filter
           </p>
         </div>
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          {(["CONSENSUS", "MAJORITY", "SPLIT"] as Routing[]).map((r) => {
+        <div className="grid grid-cols-4 gap-4 mb-6">
+          {(["CLEAR", "CHECK", "REVIEW", "ESCALATE"] as Routing[]).map((r) => {
             const cfg = ROUTING_CONFIG[r];
             const Icon = cfg.icon;
-            const count = r === "CONSENSUS" ? summary.consensusCount
-                        : r === "MAJORITY"  ? summary.majorityCount
-                        : summary.splitCount;
+            const count = countFor(r);
             const isActive = activeFilter === r;
             return (
               <button
                 key={r}
-                onClick={() => { setActiveFilter(isActive ? "ALL" : r); setActiveTab("all"); }}
+                onClick={() => setActiveFilter(isActive ? "ALL" : r)}
                 className={cn(
                   "rounded-xl border-2 p-5 text-center transition-all hover:shadow-md",
                   cfg.cardBg,
-                  isActive ? "shadow-md" : "border-transparent"
+                  isActive ? "shadow-lg" : "border-transparent"
                 )}
-                style={{ borderColor: isActive ? cfg.ringColor : "transparent" }}
+                style={{ borderColor: isActive ? cfg.badgeBg : "transparent" }}
               >
                 <Icon className="w-5 h-5 mx-auto mb-2" style={{ color: cfg.badgeBg }} />
                 <p className="text-3xl font-bold" style={{ color: cfg.badgeBg }}>{count}</p>
-                <p className="text-sm font-bold mt-0.5" style={{ color: cfg.badgeBg }}>{cfg.label}</p>
+                <p className="text-xs font-bold mt-0.5 tracking-wide" style={{ color: cfg.badgeBg }}>{cfg.label}</p>
                 <p className="text-xs text-slate-500 mt-0.5">{cfg.sublabel}</p>
               </button>
             );
           })}
         </div>
 
-        {/* ── Overall assessment bar ───────────────────────────── */}
+        {/* ── Overall risk bar ─────────────────────────────────── */}
         <div className="rounded-xl border border-slate-200 bg-white p-4 mb-6 shadow-sm flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
-            <div className={cn("px-3 py-1.5 rounded-lg text-sm font-bold", {
+            <ShieldCheck className="w-4 h-4 text-slate-400" />
+            <span className="text-sm text-slate-600">Deal risk level:</span>
+            <div className={cn("px-3 py-1 rounded-lg text-sm font-bold", {
               "bg-slate-100 text-slate-700": summary.overallRisk === "LOW",
               "bg-amber-100 text-amber-800": summary.overallRisk === "MODERATE",
               "bg-red-100 text-red-800":     summary.overallRisk === "ELEVATED",
             })}>
-              {summary.overallRisk} AGREEMENT
+              {summary.overallRisk}
             </div>
-            <p className="text-xs text-slate-500">
-              {summary.splitCount} Split · {summary.majorityCount} Majority · {summary.consensusCount} Consensus
+            <p className="text-xs text-slate-400">
+              {summary.escalateCount} Escalate · {summary.reviewCount} Review · {summary.checkCount} Check · {summary.clearCount} Clear
             </p>
           </div>
           <div className="flex items-center gap-2 text-sm text-slate-500">
             <Clock className="w-4 h-4" />
-            <span>Est. total review time: <strong className="text-slate-700">{Math.round(totalTime / 60)} hours</strong></span>
+            <span>Est. total review: <strong className="text-slate-700">{Math.round(totalTime / 60)} hours</strong></span>
           </div>
         </div>
 
-        {/* ── Tabs ─────────────────────────────────────────────── */}
-        <div className="flex gap-2 mb-6 border-b border-slate-200">
-          {[
-            { key: "split", label: `Split Items (${splitItems.length})` },
-            { key: "all",   label: "All 42 Items" },
-            { key: "gaps",  label: `Information Gaps (${gaps.length})` },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => { setActiveTab(tab.key as any); if (tab.key !== "all") setActiveFilter("ALL"); }}
-              className={cn(
-                "px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors",
-                activeTab === tab.key
-                  ? "border-blue-600 text-blue-700"
-                  : "border-transparent text-slate-500 hover:text-slate-700"
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+        {/* ── Filter bar ───────────────────────────────────────── */}
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          <Filter className="w-4 h-4 text-slate-400" />
+          <div className="flex gap-2 flex-wrap">
+            {(["ESCALATE", "REVIEW", "CHECK", "CLEAR", "ALL", "GAPS"] as const).map((f) => {
+              const labels: Record<string, string> = {
+                ALL: "All Items", GAPS: `Info Gaps (${gaps.length})`,
+                ESCALATE: `Escalate (${summary.escalateCount})`,
+                REVIEW:   `Review (${summary.reviewCount})`,
+                CHECK:    `Check (${summary.checkCount})`,
+                CLEAR:    `Clear (${summary.clearCount})`,
+              };
+              const isActive = activeFilter === f;
+              const cfg = f !== "ALL" && f !== "GAPS" ? ROUTING_CONFIG[f as Routing] : null;
+              return (
+                <button
+                  key={f}
+                  onClick={() => setActiveFilter(f)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
+                    isActive
+                      ? cfg ? "text-white" : "bg-slate-800 text-white"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  )}
+                  style={isActive && cfg ? { backgroundColor: cfg.badgeBg, color: cfg.badgeText } : undefined}
+                >
+                  {labels[f]}
+                </button>
+              );
+            })}
+          </div>
+          {activeFilter !== "GAPS" && (
+            <span className="text-xs text-slate-400 ml-1">{filteredItems.length} items</span>
+          )}
         </div>
 
-        {/* ── Split tab ─────────────────────────────────────────── */}
-        {activeTab === "split" && (
-          <div>
-            <p className="text-sm text-slate-500 mb-4">
-              Items where the three models <strong>could not reach agreement</strong> — human review and final call required.
-              Sorted by priority score.
-            </p>
-            <div className="space-y-3">
-              {splitItems.map((item: any) => (
-                <ReviewItemCard key={item.checklistId} item={item} />
-              ))}
-              {splitItems.length === 0 && (
-                <div className="text-center py-12 text-slate-400">
-                  <CheckCircle2 className="w-10 h-10 mx-auto mb-3 text-green-400" />
-                  <p>No Split items — all models reached agreement on every checklist item.</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ── All items tab ─────────────────────────────────────── */}
-        {activeTab === "all" && (
-          <div>
-            <div className="flex items-center gap-2 mb-4 flex-wrap">
-              <Filter className="w-4 h-4 text-slate-400" />
-              <div className="flex gap-2 flex-wrap">
-                {(["ALL", "SPLIT", "MAJORITY", "CONSENSUS"] as const).map((f) => {
-                  const labels: Record<string, string> = {
-                    ALL: "All", SPLIT: "Split", MAJORITY: "Majority", CONSENSUS: "Consensus",
-                  };
-                  const isActive = activeFilter === f;
-                  const cfg = f !== "ALL" ? ROUTING_CONFIG[f as Routing] : null;
-                  return (
-                    <button
-                      key={f}
-                      onClick={() => setActiveFilter(f)}
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
-                        isActive
-                          ? f === "ALL"
-                            ? "bg-slate-800 text-white"
-                            : "text-white"
-                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                      )}
-                      style={isActive && cfg ? { backgroundColor: cfg.badgeBg, color: cfg.badgeText } : undefined}
-                    >
-                      {labels[f]}
-                    </button>
-                  );
-                })}
+        {/* ── Item list ────────────────────────────────────────── */}
+        {activeFilter !== "GAPS" && (
+          <div className="space-y-3">
+            {filteredItems.map((item: any) => (
+              <ReviewItemCard key={item.checklistId} item={item} />
+            ))}
+            {filteredItems.length === 0 && (
+              <div className="text-center py-12 text-slate-400">
+                <CheckCircle2 className="w-10 h-10 mx-auto mb-3 text-green-400" />
+                <p>No items in this category.</p>
               </div>
-              <span className="text-xs text-slate-400 ml-2">{filteredAll.length} items</span>
-            </div>
-            <div className="space-y-3">
-              {filteredAll.map((item: any) => (
-                <ReviewItemCard key={item.checklistId} item={item} />
-              ))}
-            </div>
+            )}
           </div>
         )}
 
-        {/* ── Information gaps tab ─────────────────────────────── */}
-        {activeTab === "gaps" && (
+        {/* ── Info gaps ────────────────────────────────────────── */}
+        {activeFilter === "GAPS" && (
           <div>
             <p className="text-sm text-slate-500 mb-4">
               Key information gaps that require follow-up before closing.
@@ -428,17 +391,47 @@ export default function ReportPage() {
                   </div>
                 </div>
               ))}
+              {gaps.length === 0 && (
+                <div className="text-center py-12 text-slate-400">
+                  <CheckCircle2 className="w-10 h-10 mx-auto mb-3 text-green-400" />
+                  <p>No information gaps identified.</p>
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        <div className="mt-8 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-500 leading-relaxed">
-          <p>
-            <strong className="text-slate-700">Disclaimer:</strong> This report is generated by AI models and is intended as a first-pass
-            triage tool only. The routing categories (Consensus / Majority / Split) reflect the degree of model agreement —
-            they do not constitute professional risk opinions. All findings must be independently verified by qualified professionals
-            before any investment decision is made. Olive & Thyme LLC is entirely fictional and created for demonstration purposes.
+        {/* ── Routing key ──────────────────────────────────────── */}
+        <div className="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-5">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Routing Key</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            {(["CLEAR", "CHECK", "REVIEW", "ESCALATE"] as Routing[]).map((r) => {
+              const cfg = ROUTING_CONFIG[r];
+              return (
+                <div key={r} className="text-xs">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-xs mb-1" style={{ backgroundColor: cfg.badgeBg, color: cfg.badgeText }}>
+                    {cfg.label}
+                  </span>
+                  <p className="text-slate-500">{cfg.sublabel}</p>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Routing reflects both model <strong className="text-slate-600">agreement</strong> and <strong className="text-slate-600">severity</strong>.
+            CLEAR = all three rate LOW RISK (or 2× LOW + 1× MEDIUM).
+            CHECK = consistent moderate concern.
+            REVIEW = mixed signals, at least one HIGH.
+            ESCALATE = majority or all rate HIGH, or full 3-way split.
+            Individual model ratings (LOW RISK / MEDIUM RISK / HIGH RISK) are shown in the expanded view — these are the raw inputs to the routing matrix, not the headline decision.
           </p>
+        </div>
+
+        <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-500 leading-relaxed">
+          <strong className="text-slate-700">Disclaimer:</strong> This report is generated by AI models and is intended as a first-pass
+          triage tool only. Routing categories reflect model agreement and severity levels — they do not constitute professional risk opinions.
+          All findings must be independently verified by qualified professionals before any investment decision is made.
+          Olive & Thyme LLC is entirely fictional and created for demonstration purposes only.
         </div>
 
       </div>

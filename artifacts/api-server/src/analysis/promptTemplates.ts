@@ -4,12 +4,20 @@ export interface ModelConfig {
   provider: "openai" | "anthropic" | "gemini";
 }
 
-export const SYSTEM_PROMPT = `You are a due diligence analyst. For each of the 42 checklist items, review all provided documents and return a JSON array. Each item must have: itemNumber (integer), rating (exactly one of: GREEN, AMBER, RED), confidence (integer 1-10), rationale (2-3 sentences citing specific documents and numbers). If information is missing, rate AMBER. If two documents contradict each other, rate RED and cite both. Return ONLY valid JSON, no other text.`;
+export const SYSTEM_PROMPT = `You are a due diligence analyst. For each of the 42 checklist items, review all provided documents and return a JSON array. Each item must have:
+- itemNumber (integer)
+- rating (exactly one of: "LOW RISK", "MEDIUM RISK", "HIGH RISK")
+- confidence (integer 1-10)
+- rationale (2-3 sentences citing specific documents and data points)
+
+If expected information is missing, rate "MEDIUM RISK" and note the gap.
+If two documents contradict each other, rate "HIGH RISK" and cite both documents.
+Return ONLY valid JSON, no other text.`;
 
 export const models: ModelConfig[] = [
-  { label: "Model A: GPT-5.2",            model: "gpt-5.2",          provider: "openai"    },
-  { label: "Model B: claude-sonnet-4-6",  model: "claude-sonnet-4-6", provider: "anthropic" },
-  { label: "Model C: gemini-2.5-pro",     model: "gemini-2.5-pro",    provider: "gemini"    },
+  { label: "GPT-5.2",           model: "gpt-5.2",           provider: "openai"    },
+  { label: "Claude Sonnet 4.6", model: "claude-sonnet-4-6", provider: "anthropic" },
+  { label: "Gemini 2.5 Pro",    model: "gemini-2.5-pro",    provider: "gemini"    },
 ];
 
 export function buildDocumentContext(documents: Array<{id: string; title: string; content: string}>): string {
@@ -28,8 +36,8 @@ ${checklistText}
 
 Return a JSON array with exactly 42 objects — one per checklist item — in this format:
 [
-  {"itemNumber": 1, "rating": "GREEN", "confidence": 8, "rationale": "..."},
-  {"itemNumber": 2, "rating": "AMBER", "confidence": 6, "rationale": "..."},
+  {"itemNumber": 1, "rating": "LOW RISK", "confidence": 8, "rationale": "..."},
+  {"itemNumber": 2, "rating": "MEDIUM RISK", "confidence": 6, "rationale": "..."},
   ...
 ]
 Return ONLY the JSON array. No preamble, no explanation, no markdown fences. Start with [ and end with ].`;

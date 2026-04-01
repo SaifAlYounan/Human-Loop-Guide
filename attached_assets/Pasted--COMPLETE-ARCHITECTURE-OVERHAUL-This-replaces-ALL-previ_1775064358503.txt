@@ -1,0 +1,151 @@
+# COMPLETE ARCHITECTURE OVERHAUL
+
+This replaces ALL previous instructions about rating systems, color coding, routing, personas, and landing page layout. Do not merge with old logic — replace it entirely.
+
+---
+
+## 1. LANDING PAGE
+
+The landing page shows ONLY:
+- App title: **"Human-in-the-Loop Guidance System"**
+- Subtitle: *"Three AI models read every document. Where they disagree — and what they agree is risky — is where your team should focus."*
+- Three large buttons in a row: 📁 **Explore Data Room** | 📋 **View Checklists** | 🔍 **Run Review Analysis**
+- Below the buttons: the honesty section (two columns — "What this system does" / "What this system does NOT do")
+
+**Nothing else.** No deal snapshot. No risk flags. No revenue charts. No stats. No sidebar. No model legends. The company info appears only inside the Data Room.
+
+---
+
+## 2. MODEL RATINGS (Layer 1 — the inputs)
+
+All three models receive the **EXACT SAME** system prompt. The only difference is they are **different AI models**. No personas. Remove Conservative/Balanced/Growth-Focused entirely.
+
+Each model rates each of the 42 checklist items as:
+- **LOW RISK** — no concern identified
+- **MEDIUM RISK** — minor concern or needs clarification
+- **HIGH RISK** — material concern
+
+These are **TEXT LABELS ONLY**. No colors. No badges. No dots. No traffic lights. They appear **only** in the expanded detail view when a user clicks into a specific item to see what each model said.
+
+### Model prompt (identical for all three):
+
+```
+You are a due diligence analyst. For each of the 42 checklist items, review all provided documents and return a JSON array. Each item must have:
+- itemNumber (integer)
+- rating (exactly one of: "LOW RISK", "MEDIUM RISK", "HIGH RISK")
+- confidence (integer 1-10)
+- rationale (2-3 sentences citing specific documents and data points)
+
+If expected information is missing, rate "MEDIUM RISK" and note the gap.
+If two documents contradict each other, rate "HIGH RISK" and cite both documents.
+Return ONLY valid JSON, no other text.
+```
+
+Label models by their actual model name (e.g., "GPT-4o", "Claude Sonnet", "Gemini Flash"), not persona names.
+
+---
+
+## 3. SYSTEM ROUTING (Layer 2 — the product output)
+
+The system compares all three models' ratings for each item and routes it using a matrix that considers **BOTH agreement level AND severity level**. This is the core product logic.
+
+### ROUTING MATRIX
+
+| Agreement | Severity | → Route |
+|-----------|----------|---------|
+| 3/3 agree LOW RISK | Low | → **CLEAR** |
+| 2/3 LOW, 1 MEDIUM | Low-ish | → **CLEAR** |
+| 3/3 agree MEDIUM RISK | Medium | → **CHECK** |
+| 2/3 MEDIUM, 1 LOW | Medium-ish | → **CHECK** |
+| 2/3 MEDIUM, 1 HIGH | Mixed up | → **REVIEW** |
+| 2/3 LOW, 1 HIGH | Disagreement | → **REVIEW** |
+| 3/3 agree HIGH RISK | High consensus | → **ESCALATE** |
+| 2/3 HIGH, 1 MEDIUM | Mostly high | → **ESCALATE** |
+| 2/3 HIGH, 1 LOW | High conflict | → **ESCALATE** |
+| All three different (L/M/H) | Full split | → **ESCALATE** |
+
+**Logic summary:**
+- Low severity + agreement → CLEAR
+- Moderate severity + mostly agree → CHECK
+- Significant disagreement OR mixed signals → REVIEW
+- High severity (consensus or majority) OR complete split → ESCALATE
+
+### FOUR ROUTING LEVELS (with colors)
+
+🔵 **CLEAR** — navy badge `#1B2A4A`
+Models agree, low risk. Staff-level sign-off. Cursory check only.
+
+🟡 **CHECK** — gold badge `#FFC72C` (dark text)
+Models mostly agree, moderate risk. Senior associate targeted review. ~10-15 min per item.
+
+🟠 **REVIEW** — orange badge `#E88B3A`
+Significant disagreement or mixed risk signals. Manager substantive review. ~20-30 min per item.
+
+🔴 **ESCALATE** — coral badge `#E8614D`
+Models agree it's high risk OR they fundamentally disagree. Partner/senior review required. Full brief provided.
+
+**These colored badges are the ONLY color-coded rating elements in the entire app.** The model ratings (LOW/MEDIUM/HIGH RISK) are always plain text with no color coding.
+
+---
+
+## 4. STEERING REPORT
+
+**Header:**
+```
+HUMAN-IN-THE-LOOP GUIDANCE SYSTEM
+STEERING REPORT
+
+Target: Olive & Thyme LLC
+Date: [current date]
+Models: [list actual model names used]
+Documents Reviewed: 62
+Checklist Items Assessed: 42
+```
+
+**Summary boxes** (four boxes using the routing colors):
+```
+🔵 XX CLEAR    🟡 YY CHECK    🟠 ZZ REVIEW    🔴 WW ESCALATE
+```
+
+**Items sorted by routing level:** ESCALATE first (most urgent), then REVIEW, then CHECK, then CLEAR.
+
+**Each item shows:**
+1. Routing badge (colored: CLEAR / CHECK / REVIEW / ESCALATE)
+2. Checklist question
+3. One-line routing rationale, e.g.:
+   - "All 3 models rated HIGH RISK — consensus that this is material"
+   - "2 models say LOW RISK, 1 says HIGH RISK — disagreement on whether chef contract expiry is material"
+   - "All 3 agree LOW RISK — no concerns identified"
+4. Recommended reviewer level + estimated time
+5. **Click to expand →** shows each model's individual assessment:
+   - Model name
+   - Rating as text: LOW RISK / MEDIUM RISK / HIGH RISK
+   - Confidence: X/10
+   - Rationale: 2-3 sentences citing documents
+
+**Bottom sections:**
+- INFORMATION GAPS: what the models expected but didn't find
+- PDF download button
+- "View Full Matrix" link (optional expandable table showing all 42 items × 3 models)
+
+---
+
+## 5. EVERYTHING ELSE STAYS THE SAME
+
+- All 62 documents stored as static JSON in source code (persist after deploy)
+- 42-item checklist across 6 risk dimensions
+- Data Room page with folder sidebar
+- Checklists page showing all 42 items with relevant document links
+- DocuSign-style design (gold accent stripe, clean white background, navy headers)
+- Honesty section on landing page (what it does / what it doesn't)
+- PDF download for steering report
+
+---
+
+## SUMMARY OF THE TWO LAYERS
+
+**Layer 1 — Models (inputs):** Three different AI models independently rate 42 items as LOW RISK / MEDIUM RISK / HIGH RISK. Plain text. No colors. Same prompt, different models.
+
+**Layer 2 — System (output):** Compares the three model ratings using the routing matrix. Outputs one of four routing levels: CLEAR (🔵) / CHECK (🟡) / REVIEW (🟠) / ESCALATE (🔴). Color-coded badges. This is the product.
+
+**Why this works:** A unanimous HIGH RISK gets ESCALATED (not "cleared" just because they agree). A split where one model sees danger and others don't gets ESCALATED too. Low risk consensus gets cleared. The system accounts for both "do they agree?" and "what do they agree ON?"
