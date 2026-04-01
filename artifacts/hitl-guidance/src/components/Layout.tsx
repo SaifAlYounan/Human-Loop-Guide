@@ -21,9 +21,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex flex-col min-h-screen bg-slate-50">
+      <div className="w-full bg-red-600 text-black text-center text-xs font-bold py-1.5 tracking-widest uppercase z-50 shrink-0">
+        PROTOTYPE — VERSION 0 — FOR PROOF OF CONCEPT
+      </div>
+      <div className="flex flex-1 relative">
       <aside
-        className="fixed left-0 top-0 h-full w-72 flex flex-col z-30"
+        className="fixed left-0 top-[32px] bottom-0 w-72 flex flex-col z-30 overflow-y-auto"
         style={{ backgroundColor: "#1a3a5c" }}
       >
         <div className="px-6 py-7 border-b border-white/10">
@@ -114,6 +118,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <main className="ml-72 flex-1 min-h-screen">
         {children}
       </main>
+      </div>
     </div>
   );
 }

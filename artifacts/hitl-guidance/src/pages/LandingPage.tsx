@@ -4,9 +4,13 @@ import { Database, CheckSquare, Brain, ShieldCheck, XCircle } from "lucide-react
 export default function LandingPage() {
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center px-6 py-16"
+      className="min-h-screen flex flex-col"
       style={{ backgroundColor: "#0f1e2e" }}
     >
+      <div className="w-full bg-red-600 text-black text-center text-xs font-bold py-1.5 tracking-widest uppercase shrink-0">
+        PROTOTYPE — VERSION 0 — FOR PROOF OF CONCEPT
+      </div>
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-16">
       <div className="w-full max-w-2xl flex flex-col items-center text-center">
 
         <div
@@ -122,6 +126,7 @@ export default function LandingPage() {
           </div>
         </div>
 
+      </div>
       </div>
     </div>
   );
