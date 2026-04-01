@@ -61,6 +61,22 @@ export default function AnalysisPage() {
     : 5
     : hasReport ? STEPS.length : 0;
 
+  // Auto-recover: if the server is already running when the page loads (or the user
+  // navigated away mid-analysis), start polling + the elapsed timer automatically.
+  const didAutoStart = useRef(false);
+  useEffect(() => {
+    if (serverStatus === "running" && !polling && !didAutoStart.current) {
+      didAutoStart.current = true;
+      setPolling(true);
+      if (!timerRef.current) {
+        timerRef.current = setInterval(() => setElapsedSeconds(s => s + 1), 1000);
+      }
+    }
+    if (serverStatus !== "running") {
+      didAutoStart.current = false;
+    }
+  }, [serverStatus, polling]);
+
   useEffect(() => {
     if (!polling) return;
     const poll = setInterval(async () => {
