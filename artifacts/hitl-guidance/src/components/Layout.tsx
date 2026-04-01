@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { href: "/", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/", icon: LayoutDashboard, label: "Home" },
   { href: "/documents", icon: FileText, label: "Data Room (62 Docs)" },
   { href: "/checklist", icon: CheckSquare, label: "DD Checklist (42)" },
   { href: "/analysis", icon: Brain, label: "Run AI Analysis" },
