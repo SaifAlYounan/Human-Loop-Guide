@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Eye,
   Search,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
@@ -247,6 +248,17 @@ export default function ReportPage() {
 
   const totalTime = allItems.reduce((s: number, i: any) => s + (i.estimatedMinutes ?? 0), 0);
 
+  // Time comparison: traditional (every item, full review) vs. guided (routing-based)
+  const BASELINE_MINUTES = 42 * 35; // 42 items × 35 min avg = 1,470 min (~24.5 h)
+  const guidedMinutes =
+    summary.clearCount    *  5 +
+    summary.checkCount    * 15 +
+    summary.reviewCount   * 30 +
+    summary.escalateCount * 35;
+  const savedPct = Math.round((1 - guidedMinutes / BASELINE_MINUTES) * 100);
+  const baselineHours = Math.round(BASELINE_MINUTES / 60);
+  const guidedHours   = Math.round(guidedMinutes   / 60);
+
   return (
     <div className="p-8">
       <div className="max-w-6xl mx-auto">
@@ -262,7 +274,7 @@ export default function ReportPage() {
             Olive & Thyme LLC · Asking price $850K · Generated {new Date(report.generatedAt).toLocaleString()}
           </p>
           <p className="text-slate-400 text-xs mt-0.5">
-            3 models · 62 documents · 42 checklist items · {Math.round(totalTime / 60)}h estimated review time
+            3 models · 62 documents · 42 checklist items
           </p>
         </div>
 
@@ -296,6 +308,53 @@ export default function ReportPage() {
               </button>
             );
           })}
+        </div>
+
+        {/* ── Time comparison widget ───────────────────────────── */}
+        <div className="mb-6">
+          <div className="grid grid-cols-2 gap-4">
+            {/* Left: traditional */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                Without guided routing
+              </p>
+              <p className="text-3xl font-bold text-slate-500 mt-1">
+                ~{baselineHours}h
+              </p>
+              <p className="text-sm text-slate-500 mt-1 leading-snug">
+                Traditional review — every item gets full human attention
+              </p>
+              <p className="text-xs text-slate-400 mt-2">
+                42 items × 35 min avg
+              </p>
+            </div>
+
+            {/* Right: guided */}
+            <div
+              className="rounded-xl border p-5 relative overflow-hidden"
+              style={{ backgroundColor: "#fffbea", borderColor: "#FFC72C" }}
+            >
+              <div
+                className="absolute top-0 right-0 px-3 py-1 rounded-bl-xl text-xs font-bold flex items-center gap-1"
+                style={{ backgroundColor: "#FFC72C", color: "#1B2A4A" }}
+              >
+                <Zap className="w-3 h-3" />
+                {savedPct}% time saved
+              </div>
+              <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: "#92670a" }}>
+                With guided routing
+              </p>
+              <p className="text-3xl font-bold mt-1" style={{ color: "#1B2A4A" }}>
+                ~{guidedHours}h
+              </p>
+              <p className="text-sm mt-1 leading-snug" style={{ color: "#92670a" }}>
+                CLEAR items 5 min · CHECK 15 min · REVIEW 30 min · ESCALATE 35 min
+              </p>
+              <p className="text-xs mt-2" style={{ color: "#b07d12" }}>
+                Human effort concentrated where it matters most
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* ── Overall risk bar ─────────────────────────────────── */}
