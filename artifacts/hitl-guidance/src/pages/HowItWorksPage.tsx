@@ -76,6 +76,60 @@ const ROUTING_LEVELS = [
   },
 ];
 
+const RISK_RUBRIC = [
+  {
+    label: "LOW RISK",
+    bg: "#DBEAFE",
+    border: "#93C5FD",
+    textColor: "#1e40af",
+    headingColor: "#1d4ed8",
+    bullets: [
+      "Fully documented, no gaps",
+      "Standard market practice",
+      "No contradictions across documents",
+      "<1% impact on deal value",
+    ],
+  },
+  {
+    label: "MEDIUM RISK",
+    bg: "#FEF3C7",
+    border: "#FCD34D",
+    textColor: "#92400e",
+    headingColor: "#b45309",
+    bullets: [
+      "Partial documentation or minor gaps",
+      "Non-standard but not unusual",
+      "Minor inconsistencies between documents",
+      "1–5% impact on deal value",
+    ],
+  },
+  {
+    label: "HIGH RISK",
+    bg: "#FEE2E2",
+    border: "#FCA5A5",
+    textColor: "#991b1b",
+    headingColor: "#dc2626",
+    bullets: [
+      "Missing or contradictory documentation",
+      "Material deviation from market standard",
+      "Document conflicts (X says one thing, Y says another)",
+      ">5% impact or deal-breaker potential",
+    ],
+  },
+];
+
+const MATRIX_CELLS: Record<string, { label: string; bg: string; text: string }> = {
+  "low-all":    { label: "CLEAR",    bg: "#DBEAFE", text: "#1d4ed8" },
+  "low-2of3":   { label: "CHECK",    bg: "#FEF3C7", text: "#b45309" },
+  "low-split":  { label: "REVIEW",   bg: "#FFEDD5", text: "#c2410c" },
+  "med-all":    { label: "CHECK",    bg: "#FEF3C7", text: "#b45309" },
+  "med-2of3":   { label: "REVIEW",   bg: "#FFEDD5", text: "#c2410c" },
+  "med-split":  { label: "ESCALATE", bg: "#FEE2E2", text: "#b91c1c" },
+  "high-all":   { label: "ESCALATE", bg: "#FEE2E2", text: "#b91c1c" },
+  "high-2of3":  { label: "ESCALATE", bg: "#FEE2E2", text: "#b91c1c" },
+  "high-split": { label: "ESCALATE", bg: "#FEE2E2", text: "#b91c1c" },
+};
+
 const ONE_MODEL_PROBLEMS = [
   "One AI reviewing documents is just automation",
   "If it misses something, nobody catches it",
@@ -104,6 +158,20 @@ const DOES_NOT = [
   "Make the investment decision for you",
 ];
 
+function MatrixCell({ cellKey }: { cellKey: string }) {
+  const cell = MATRIX_CELLS[cellKey];
+  return (
+    <td className="p-0">
+      <div
+        className="m-1 rounded-lg px-3 py-2 text-center text-xs font-bold tracking-wide"
+        style={{ backgroundColor: cell.bg, color: cell.text }}
+      >
+        {cell.label}
+      </div>
+    </td>
+  );
+}
+
 export default function HowItWorksPage() {
   return (
     <div className="p-8">
@@ -130,9 +198,7 @@ export default function HowItWorksPage() {
               const isLast = i === STEPS.length - 1;
               return (
                 <div key={step.step} className="flex md:flex-col items-start md:items-center gap-4 md:gap-0 relative">
-                  {/* Step box */}
                   <div className="flex flex-col items-center md:w-full">
-                    {/* Icon circle */}
                     <div
                       className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-md shrink-0"
                       style={{ backgroundColor: NAVY }}
@@ -140,7 +206,6 @@ export default function HowItWorksPage() {
                       <Icon className="w-7 h-7 text-white" />
                     </div>
 
-                    {/* Connector line (desktop) */}
                     {!isLast && (
                       <div
                         className="hidden md:block absolute top-8 left-[calc(50%+32px)] right-[calc(-50%+32px)] h-0.5"
@@ -148,7 +213,6 @@ export default function HowItWorksPage() {
                       />
                     )}
 
-                    {/* Step number pill */}
                     <div
                       className="mt-3 px-2.5 py-0.5 rounded-full text-xs font-bold"
                       style={{ backgroundColor: GOLD, color: NAVY }}
@@ -157,7 +221,6 @@ export default function HowItWorksPage() {
                     </div>
                   </div>
 
-                  {/* Text */}
                   <div className="md:text-center md:px-4 md:mt-3 flex-1">
                     <p className="font-bold text-sm mb-1" style={{ color: NAVY }}>
                       {step.label}
@@ -167,7 +230,6 @@ export default function HowItWorksPage() {
                     </p>
                   </div>
 
-                  {/* Arrow connector (mobile) */}
                   {!isLast && (
                     <div className="md:hidden flex justify-center py-1 w-16 shrink-0">
                       <ArrowRight className="w-4 h-4 rotate-90" style={{ color: GOLD }} />
@@ -179,7 +241,7 @@ export default function HowItWorksPage() {
           </div>
         </div>
 
-        {/* ── Routing Matrix ────────────────────────────────────── */}
+        {/* ── How Items Get Routed ──────────────────────────────── */}
         <div className="mb-16">
           <h2 className="text-xl font-bold mb-1" style={{ color: NAVY }}>
             How Items Get Routed
@@ -228,6 +290,105 @@ export default function HowItWorksPage() {
           </div>
         </div>
 
+        {/* ── How Risk Is Rated ─────────────────────────────────── */}
+        <div className="mb-16">
+          <h2 className="text-xl font-bold mb-1" style={{ color: NAVY }}>
+            How Risk Is Rated
+          </h2>
+          <p className="text-slate-500 text-sm mb-6">
+            Every model applies this rubric independently. If an item meets any single criterion of a higher tier, it is rated at the higher tier. When in doubt, rate up.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+            {RISK_RUBRIC.map((r) => (
+              <div
+                key={r.label}
+                className="rounded-xl border p-5"
+                style={{ backgroundColor: r.bg, borderColor: r.border }}
+              >
+                <p className="text-sm font-bold tracking-wide mb-3" style={{ color: r.headingColor }}>
+                  {r.label}
+                </p>
+                <div className="space-y-2">
+                  {r.bullets.map((b) => (
+                    <div key={b} className="flex items-start gap-2">
+                      <div
+                        className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0"
+                        style={{ backgroundColor: r.headingColor }}
+                      />
+                      <p className="text-xs leading-snug" style={{ color: r.textColor }}>
+                        {b}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-sm text-slate-500 leading-relaxed">
+            Each model applies this same standard independently. The differences come from perspective, not criteria — like three reviewers reading the same contract with different instincts.
+          </p>
+        </div>
+
+        {/* ── How Findings Become Actions ───────────────────────── */}
+        <div className="mb-16">
+          <h2 className="text-xl font-bold mb-1" style={{ color: NAVY }}>
+            How Findings Become Actions
+          </h2>
+          <p className="text-slate-500 text-sm mb-6">
+            Two dimensions drive every routing decision: what the models found (severity) and whether they agree (consensus).
+          </p>
+
+          <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-slate-50">
+                  <th className="p-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide border-b border-slate-200 w-28">
+                    Severity
+                  </th>
+                  <th className="p-3 text-center text-xs font-bold text-slate-700 border-b border-slate-200">
+                    All 3 Agree
+                  </th>
+                  <th className="p-3 text-center text-xs font-bold text-slate-700 border-b border-slate-200">
+                    2 of 3 Agree
+                  </th>
+                  <th className="p-3 text-center text-xs font-bold text-slate-700 border-b border-slate-200">
+                    All Disagree
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-slate-100">
+                  <td className="p-3 text-xs font-bold text-slate-600">Low Risk</td>
+                  <MatrixCell cellKey="low-all" />
+                  <MatrixCell cellKey="low-2of3" />
+                  <MatrixCell cellKey="low-split" />
+                </tr>
+                <tr className="border-b border-slate-100 bg-slate-50/50">
+                  <td className="p-3 text-xs font-bold text-slate-600">Medium Risk</td>
+                  <MatrixCell cellKey="med-all" />
+                  <MatrixCell cellKey="med-2of3" />
+                  <MatrixCell cellKey="med-split" />
+                </tr>
+                <tr>
+                  <td className="p-3 text-xs font-bold text-slate-600">High Risk</td>
+                  <MatrixCell cellKey="high-all" />
+                  <MatrixCell cellKey="high-2of3" />
+                  <MatrixCell cellKey="high-split" />
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p className="mt-5 text-sm text-slate-600 leading-relaxed">
+            When all three models flag the same high-risk issue, it goes straight to a senior reviewer. When they disagree on something minor, a quick check is enough. The matrix ensures nothing gets the wrong level of attention.
+          </p>
+          <p className="mt-3 text-xs text-slate-400 leading-relaxed">
+            This matrix is fully customizable. Swap in your firm's own risk framework, adjust the thresholds per deal type, or add dimensions — the system adapts to however you classify risk, not the other way around.
+          </p>
+        </div>
+
         {/* ── Why Three Models? ─────────────────────────────────── */}
         <div className="mb-16">
           <h2 className="text-xl font-bold mb-1" style={{ color: NAVY }}>
@@ -238,7 +399,6 @@ export default function HowItWorksPage() {
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Left */}
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-6">
               <div className="flex items-center gap-2 mb-4">
                 <XCircle className="w-5 h-5 text-slate-400" />
@@ -254,7 +414,6 @@ export default function HowItWorksPage() {
               </div>
             </div>
 
-            {/* Right */}
             <div
               className="rounded-xl border p-6"
               style={{ borderColor: GOLD + "80", backgroundColor: "#fffbea" }}

@@ -1,0 +1,109 @@
+# Add Risk Rubric + Routing Matrix to the App
+
+Two changes: (1) add a risk rating rubric to the model prompts AND display it on the How It Works page, (2) add a routing matrix showing how findings become actions.
+
+---
+
+## Part 1: Update the Model Prompts
+
+In each of the 3 model system prompts (conservative, balanced, aggressive), add this rubric to the instructions so models apply a consistent standard when rating items:
+
+```
+RISK RATING RUBRIC — Apply this standard to every checklist item:
+
+LOW RISK — Item is:
+• Fully documented with no gaps
+• Compliant with standard practice
+• No contradictions across documents
+• Immaterial to deal value (<1% impact)
+
+MEDIUM RISK — Item has:
+• Partial documentation or minor gaps
+• Non-standard but not unusual terms
+• Minor inconsistencies between documents
+• Moderate potential impact (1-5% of deal value)
+
+HIGH RISK — Item has:
+• Missing or contradictory documentation
+• Material deviation from market standard
+• Conflicts between documents (e.g., one document says X, another says Y)
+• Significant potential impact (>5% of deal value or deal-breaker potential)
+
+Rate each item against ALL four criteria in the relevant tier. If an item meets ANY single criterion of a higher tier, rate it at the higher tier. When in doubt, rate UP not down.
+```
+
+The rubric is the same for all 3 models — what differs is each model's personality/perspective, not the rating standard.
+
+---
+
+## Part 2: Display the Rubric on the How It Works Page
+
+Add a section called "How Risk Is Rated" on the How It Works page. Display the same rubric in a clean visual format.
+
+Three cards/columns side by side (stacked on mobile):
+
+**LOW RISK** 🟦 (blue card, #DBEAFE background)
+- Fully documented, no gaps
+- Standard market practice
+- No contradictions across documents
+- <1% impact on deal value
+
+**MEDIUM RISK** 🟨 (yellow card, #FEF3C7 background)
+- Partial documentation or minor gaps
+- Non-standard but not unusual
+- Minor inconsistencies between documents
+- 1-5% impact on deal value
+
+**HIGH RISK** 🟥 (red card, #FEE2E2 background)
+- Missing or contradictory documentation
+- Material deviation from market standard
+- Document conflicts (X says one thing, Y says another)
+- >5% impact or deal-breaker potential
+
+Below the cards, one line: "Each model applies this same standard independently. The differences come from perspective, not criteria — like three reviewers reading the same contract with different instincts."
+
+Place this section BEFORE the Routing Matrix section.
+
+---
+
+## Part 3: Add the Routing Matrix
+
+Below the rubric section, add a new section called "How Findings Become Actions".
+
+Display a 3×3 HTML table:
+
+- **Rows** = Severity (what the models flagged): Low Risk, Medium Risk, High Risk
+- **Columns** = Agreement (how aligned the models are): All Agree, 2 of 3 Agree, All Disagree
+
+| | All Agree | 2 of 3 Agree | All Disagree |
+|---|---|---|---|
+| **Low Risk** | CLEAR 🟦 | CHECK 🟨 | REVIEW 🟧 |
+| **Medium Risk** | CHECK 🟨 | REVIEW 🟧 | ESCALATE 🟥 |
+| **High Risk** | ESCALATE 🟥 | ESCALATE 🟥 | ESCALATE 🟥 |
+
+**Cell styling:**
+- CLEAR: blue background (#DBEAFE), blue text
+- CHECK: yellow background (#FEF3C7), amber text
+- REVIEW: orange background (#FFEDD5), orange text
+- ESCALATE: red background (#FEE2E2), red text
+- Clean sans-serif font, rounded corners on cells, subtle border
+- Row/column headers in dark gray, bold
+- On mobile: horizontally scrollable if needed, but should fit most screens (only 4 columns)
+
+**Below the matrix, add:**
+"Two dimensions drive every routing decision: **what the models found** (severity) and **whether they agree** (consensus). When all three models flag the same high-risk issue, it goes straight to a senior reviewer. When they disagree on something minor, a quick check is enough. The matrix ensures nothing gets the wrong level of attention."
+
+**Below that, add a second line in slightly smaller/muted text:**
+"This matrix is fully customizable. Swap in your firm's own risk framework, adjust the thresholds per deal type, or add dimensions — the system adapts to however you classify risk, not the other way around."
+
+---
+
+## Page Flow (How It Works)
+
+The final section order on the How It Works page should be:
+
+1. **Existing content** — how the 3-model adversarial review works
+2. **"How Risk Is Rated"** — the rubric cards (Part 2)
+3. **"How Findings Become Actions"** — the routing matrix (Part 3)
+
+This creates a natural narrative: here's how we review → here's how we rate → here's what happens next.
