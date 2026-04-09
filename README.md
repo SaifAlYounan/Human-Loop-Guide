@@ -3,6 +3,8 @@
 **Three AI models. Same documents. Same checklist. Different opinions.**  
 Where they agree, move fast. Where they disagree, that's exactly where your team should focus.
 
+> **⚠️ Proof of concept.** This is an open-source demo showing how far multi-model adversarial review can take due diligence workflows. It uses fictional data and is not production software. The production version is whatever you make of it — fork it, swap in your own documents and risk framework, harden it, make it yours. This repo exists to show what's possible.
+
 🔗 **[Live Demo](https://human-loop-guide.replit.app)** — uses fictional data, fully functional
 
 ---
